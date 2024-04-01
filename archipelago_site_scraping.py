@@ -20,7 +20,7 @@ class archipelago_site_slot_data:
         self.tracker_page = tracker_page # RELATIVE LINK "/tracker/...."
 
     @classmethod
-    def from_soup(cls, soup: BeautifulSoup = None):
+    def from_soup(cls, soup: BeautifulSoup):
         columns = soup.find_all("td")
         id = columns[0].text
         name = columns[1].find("a").text
@@ -33,22 +33,30 @@ class archipelago_site_slot_data:
 class archipelago_site_data:
     #Container for multiworld.gg site information; glorified dict
     game_id: str = None
+    port: str = None
     players: list[archipelago_site_slot_data] = []
 
     def __init__(self):
         self.game_id = None
+        self.port = None
         self.players = []
 
-async def get_site_data(url: str) -> archipelago_site_data:
+def get_site_data(url: str) -> archipelago_site_data:
     #Takes a url to https://archipelago.gg/room/... and returns out a site_data object
     return_data = archipelago_site_data()
     page_request = requests.get(url=url)
 
     main_bs = BeautifulSoup(page_request.content, "html.parser")
+
+    #Get the game ID from the <title> field
     return_data.game_id = main_bs.find("title").text[11:] # Cut out "multiworld " from the title
+    
+    #Get the port, luckily (so far) there is only one span! Huzzah!
+    # We will grab the "data-tooltip" arg and take the final 6 characters, then cut off the last one (port is *58967*.)
+    return_data.port = main_bs.find("span").attrs['data-tooltip'][-6:-1]
 
     all_tables = main_bs.find_all("table")
-    # There should only be one table.
+    # There should only be one table, where we have all the player info we want
     if (len(all_tables) > 0):
         try:
             main_table: BeautifulSoup = all_tables[0]
