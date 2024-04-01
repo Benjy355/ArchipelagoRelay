@@ -39,7 +39,7 @@ class archipelago_site_data:
         self.game_id = None
         self.players = []
 
-def get_site_data(url: str) -> archipelago_site_data:
+async def get_site_data(url: str) -> archipelago_site_data:
     #Takes a url to https://archipelago.gg/room/... and returns out a site_data object
     return_data = archipelago_site_data()
     page_request = requests.get(url=url)
