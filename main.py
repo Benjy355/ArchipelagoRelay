@@ -3,10 +3,15 @@ import discord
 from archipelago_relay import archi_relay, FailedToStart
 from discord_oauth import DISCORD_TOKEN
 from discord import app_commands
+import asyncio
 import logging
 from chat_handler import chat_handler, chat_message
 
+from archipelago_site_scraping import get_site_data
+
 # Perms int 377957207104
+#test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
+#breakHere = None
 
 tracked_games = []
 
@@ -29,6 +34,7 @@ cmd_tree = app_commands.CommandTree(main_bot)
 async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "False"):
     #TODO: CHECK IF WE HAVE PERMISSIONS IN THAT CHANNEL BEFORE STARTING
     try:
+        #Create our relay object to start tracking!
         tracked_games.append(await archi_relay(main_bot, ctx.channel, multiworld_link, main_chat_handler))
         await ctx.response.send_message("Connecting!", ephemeral=True)
     except FailedToStart as e:
@@ -40,4 +46,3 @@ async def on_ready():
     await cmd_tree.sync()
 
 main_bot.run(DISCORD_TOKEN, log_level=logging.WARN)
-
