@@ -13,7 +13,6 @@ import sys
 
 class chat_message:
     #Simple container for message relay messages
-    # 20 = ~ 50/second
     message: str = None
     channel: discord.TextChannel = None
     
@@ -22,7 +21,11 @@ class chat_message:
         self.channel = channel
 
 class chat_handler:
-    _NEXT_MESSAGE_DELAY = 20 # In milliseconds, how long to sleep between messages sent to Discord
+    # If you accidentally create two of these classes, its whole purpose is moot.
+
+    # 40ms = ~ 25/second
+    _NEXT_MESSAGE_DELAY = 40 # In milliseconds, how long to sleep between messages sent to Discord
+    _NEXT_MESSAGE_DELAY = _NEXT_MESSAGE_DELAY / 1000 # Convert to seconds for asyncio.sleep
     _bot_client: discord.Client = None
     _message_queue: list[chat_message] = None # List of chat_message objects
     _loop_object: asyncio.Task = None
@@ -54,3 +57,5 @@ class chat_handler:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
                 logging.error([exc_type, fname, exc_tb.tb_lineno])
+                await asyncio.sleep(self._NEXT_MESSAGE_DELAY)
+            
