@@ -13,7 +13,7 @@ from archipelago_site_scraping import get_site_data
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
 #breakHere = None
 
-#logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
 
 tracked_games: list[archi_relay] = []
 
@@ -37,6 +37,11 @@ async def connect(ctx: discord.Interaction, multiworld_link: str, password: str 
     #TODO: CHECK IF WE HAVE PERMISSIONS IN THAT CHANNEL BEFORE STARTING
     try:
         #Create our relay object to start tracking!
+        #Check to make sure we don't have an active one with the same link
+        for relay in tracked_games:
+            if (relay.connection_url == multiworld_link):
+                await relay.disconnect()
+                tracked_games.remove(relay)
         new_relay = archi_relay(main_bot, ctx.channel, multiworld_link, main_chat_handler, password)
         tracked_games.append(new_relay)
         await ctx.response.send_message("Connecting!", ephemeral=True)
@@ -51,10 +56,6 @@ async def connect(ctx: discord.Interaction, multiworld_link: str, password: str 
 async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
     prev_link = Config.get("last_archi_connection_link", ctx.guild)
     if (prev_link):
-        #Check to make sure we don't have an active one with the same link
-        for relay in tracked_games:
-            if (relay.connection_url == prev_link):
-                await relay.disconnect()
         await connect(ctx, prev_link, Config.get("last_archi_connection_password", ctx.guild), create_thread)
     else:
         await ctx.response.send_message("I don't see a previous Multiworld game to connect to.", ephemeral=True)
