@@ -54,7 +54,7 @@ class chat_handler:
                     await next_message.channel.send(next_message.message)
                 await asyncio.sleep(self._NEXT_MESSAGE_DELAY)
             except discord.Forbidden:
-                logging.error("[chat_handler]Don't have permissions to send messages in channel '%s', stopping." % next_message.channel.name)
+                logging.error("[chat_handler]Don't have permissions to send messages in channel '%s'." % next_message.channel.name)
                 self._keep_running = False
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
