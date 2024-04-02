@@ -36,10 +36,13 @@ class chat_handler:
         self._message_queue = []
         self._keep_running = True
 
+    def start(self):
         # Start our co-routine for sending messages
         self._loop_object = asyncio.create_task(self._message_loop(), name="discord_message_loop")        
 
     async def add_message(self, message: chat_message):
+        if (type(message) != chat_message):
+            raise Exception("[add_message]You can't add a string! Add a chat_message object!")
         self._message_queue.append(message)
 
     async def _message_loop(self):
@@ -47,8 +50,8 @@ class chat_handler:
         while (self._keep_running):
             try:
                 if (len(self._message_queue) > 0):
-                    next_message: chat_message = self._message_queue.pop
-                    next_message.channel.send(next_message.message)
+                    next_message: chat_message = self._message_queue.pop(0)
+                    await next_message.channel.send(next_message.message)
                 await asyncio.sleep(self._NEXT_MESSAGE_DELAY)
             except discord.Forbidden:
                 logging.error("[chat_handler]Don't have permissions to send messages in channel '%s', stopping." % next_message.channel.name)

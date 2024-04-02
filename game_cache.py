@@ -1,9 +1,8 @@
 #Handles caching/retrieval of game data
 
-import copy
 import json
 import os
-import discord
+import sys
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 #_game_data[game] = {data}
 _game_data = {}
 _json_directory = "game_data"
-_json_file = _json_directory + "\\c%s.json"
+_json_file = _json_directory + "\\%s.json"
 
 def get_game_cache(game_name: str, version: int) -> dict:
     #Check to see if there is a JSON file containing all of our game data
@@ -21,6 +20,7 @@ def get_game_cache(game_name: str, version: int) -> dict:
     global _game_data, _json_file
 
     if (not game_name in _game_data or _game_data[game_name] == None):
+        # No cache in memory right now, let's grab the JSON
         if (os.path.isfile(_json_file % game_name)):
             try:
                 json_file = open(_json_file % game_name, 'r')
@@ -28,7 +28,7 @@ def get_game_cache(game_name: str, version: int) -> dict:
                 logging.error("[game_cache]Failed to open JSON cache file for %s!" % game_name)
                 return None
             try:
-                logging.debug("[game_cache]Loading cache for %s" % _game_data)
+                logging.debug("[game_cache]Loading cache for %s" % game_name)
                 _game_data[game_name] = json.loads(json_file.read())
             except:
                 json_file.close()
@@ -37,35 +37,42 @@ def get_game_cache(game_name: str, version: int) -> dict:
                 return None
             json_file.close()
         else:
+            # No cache available, return None
             logging.debug("[game_cache]No cache for %s found" % game_name)
-        return None
-    else:
-        #Check our version
-        try:
-            #TODO: CHECK THE CHECKSUM
-            if (int(_game_data[game_name]['version']) < version):
-                _game_data[game_name] = None
-                logging.info("[game_cache]Cache for %s is out of date! Requesting..." % game_name)
-        except:
-            logging.error("[game_cache]Cache for %s is corrupt (in memory)! Requesting..." % game_name)
             return None
-        return _game_data[game_name]
+    # We have something in our memory, let's confirm our version
+    try:
+        #TODO: CHECK THE CHECKSUM
+        if (int(_game_data[game_name]['version']) < version):
+            _game_data[game_name] = None
+            logging.info("[game_cache]Cache for %s is out of date! Requesting..." % game_name)
+            return None
+    except:
+        logging.error("[game_cache]Cache for %s is corrupt (in memory)! Requesting..." % game_name)
+        return None
+    
+    # Our cache must be okay, let's send it over
+    return _game_data[game_name]
 
-#'command', 'data', 'version'
 def update_game_cache(game_name: str, game_dict: dict) -> None:
     #Replace any json file with our new game data.
     global _game_data, _json_file
+    _game_data[game_name] = game_dict
     try:
         if (not os.path.exists(_json_directory)):
             os.makedirs(_json_directory)
     except:
-        _game_data[game_name] = game_dict
         logging.error("[game_cache]Failed to make or access %s" % _json_directory)
     
     try:
         io_file = open(_json_file % game_name, 'w')
-        json.dump(_game_data[game_name], io_file)
+        json.dump(game_dict, io_file)
+        logging.debug("[game_cache]Updated game cache for %s!" % game_name)
         io_file.close()
-    except:
+    except Exception as e:
         logging.error("[game_cache]Failed to save cache for %s" % game_name)
-    
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        logging.error("[game_cache]")
+        logging.error([exc_type, fname, exc_tb.tb_lineno])
+        logging.error(e)

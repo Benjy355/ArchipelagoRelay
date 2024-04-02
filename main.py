@@ -13,7 +13,9 @@ from archipelago_site_scraping import get_site_data
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
 #breakHere = None
 
-tracked_games = []
+logging.getLogger().setLevel(logging.DEBUG)
+
+tracked_games: list[archi_relay] = []
 
 intent = discord.Intents.default()
 intent.message_content = True
@@ -35,13 +37,31 @@ async def connect(ctx: discord.Interaction, multiworld_link: str, password: str 
     #TODO: CHECK IF WE HAVE PERMISSIONS IN THAT CHANNEL BEFORE STARTING
     try:
         #Create our relay object to start tracking!
-        tracked_games.append(await archi_relay(main_bot, ctx.channel, multiworld_link, main_chat_handler))
+        new_relay = archi_relay(main_bot, ctx.channel, multiworld_link, main_chat_handler, password)
+        tracked_games.append(new_relay)
         await ctx.response.send_message("Connecting!", ephemeral=True)
+        new_relay.start()
+        Config.set("last_archi_connection_link", multiworld_link, ctx.guild)
+        Config.set("last_archi_connection_password", password, ctx.guild)
     except FailedToStart as e:
-        await ctx.response.send_message("Failed to connect! %s" % e.reason)
+        await ctx.response.send_message("Failed to connect! %s" % e.reason, ephemeral=True)
+
+@cmd_tree.command(name="reconnect", description="Reconnects to the last Multiworld server")
+@app_commands.describe(create_thread="*Not yet implemented*; will create a thread in the text channel.")
+async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
+    prev_link = Config.get("last_archi_connection_link", ctx.guild)
+    if (prev_link):
+        #Check to make sure we don't have an active one with the same link
+        for relay in tracked_games:
+            if (relay.connection_url == prev_link):
+                await relay.disconnect()
+        await connect(ctx, prev_link, Config.get("last_archi_connection_password", ctx.guild), create_thread)
+    else:
+        await ctx.response.send_message("I don't see a previous Multiworld game to connect to.", ephemeral=True)
 
 @main_bot.event
 async def on_ready():
     await cmd_tree.sync()
+    main_chat_handler.start()
 
 main_bot.run(DISCORD_TOKEN, log_level=logging.WARN)

@@ -86,7 +86,7 @@ decode = JSONDecoder(object_hook=_object_hook).decode
 def tuplize_version(version: str) -> Version:
     return Version(*(int(piece, 10) for piece in version.split(".")))
 
-__Archiversion__ = "0.4.4"
+__Archiversion__ = "0.4.4" #TODO: THIS IS SCUFFED LOL
 version_tuple = tuplize_version(__Archiversion__)
 
 def get_ssl_context():
