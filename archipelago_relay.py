@@ -3,7 +3,6 @@ import websockets
 import discord
 import asyncio
 from archipelago_common import *
-from deathlink_relay import deathlink_relay
 import sys
 import os
 import game_cache
@@ -170,13 +169,12 @@ class archi_relay:
                     logging.debug(games)
                     self.append_payload(payload)
 
-                    # Now that we are fully connected, create our deathlink players
-                    for player in self._multiworld_site_data.players:
-                        if (player.id != 0):
-                            new_relay = deathlink_relay(self, player.id)
-                            await new_relay.start()
-                            self._deathlink_relays.append(new_relay)
-
+                    # Now that we are fully connected, create our deathlink relays
+                for player in self._multiworld_site_data.players:
+                    logging.debug("[handle_response]Creating deathlink relay for user in slot %s (%s)" % (player.id, player.name))
+                    new_relay = deathlink_relay(self, int(player.id))
+                    new_relay.start()
+                    self._deathlink_relays.append(new_relay)
 
             except Exception as e:
                 logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
@@ -304,5 +302,4 @@ class archi_relay:
         self._pending_payloads = []
 
 
-
-
+from deathlink_relay import deathlink_relay

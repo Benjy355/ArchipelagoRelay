@@ -9,24 +9,24 @@ class deathlink_relay(archi_relay):
     slot_id = None # Slot ID to login as for our ghost user
 
     def phantom_player(self) -> archipelago_site_slot_data:
-        return self._multiworld_site_data.players[self.slot_id]
+        return self._multiworld_site_data.players[self.slot_id - 1] # Slot data from the website starts at 1 instead of 0, adjust!
 
     def __init__(self, parent_client: archi_relay, slot_id: int):
         self.slot_id = slot_id
         
-        self._bot = parent_client.bot_client
-        self._channel = parent_client.response_channel
+        self._bot = parent_client._bot
+        self._channel = parent_client._channel
         self._thread = None
-        self._multiworld_link = parent_client.multiworld_link
+        self._multiworld_link = parent_client._multiworld_link
         self._continue = True
         
         self._deathlink_relays = None
-        self._chat_handler = parent_client.chat_handler_obj
+        self._chat_handler = parent_client._chat_handler
 
         self._archi_slot_players = parent_client._archi_slot_players
         self._archi_players = parent_client._archi_players
         self._archi_slot_info = parent_client._archi_slot_info
-        self._password = parent_client.password
+        self._password = parent_client._password
         self._room_info = parent_client._room_info
         self._pending_payloads = []
 
@@ -103,7 +103,8 @@ class deathlink_relay(archi_relay):
                 logging.error(e)
 
         elif (cmd == "Bounced"):
-            logging.debug(data)
+            logging.critical("----------BOUNCED---------")
+            logging.critical(data)
         
         else:
             logging.warn("Received unhandled cmd: %s" % cmd)
