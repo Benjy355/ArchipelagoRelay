@@ -4,6 +4,8 @@ import json
 import os
 import sys
 
+from archipelago_common import flip_dict
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,12 @@ def update_game_cache(game_name: str, game_dict: dict) -> None:
     #Replace any json file with our new game data.
     global _game_data, _json_file
     _game_data[game_name] = game_dict
+
+    # We got fresh data, let's flip the item_name_to_id table for easy skimming
+    for game in _game_data:
+        _game_data[game]['item_id_to_name'] = flip_dict(_game_data[game]['item_name_to_id'])
+        _game_data[game]['location_id_to_name'] = flip_dict(_game_data[game]['location_name_to_id'])
+
     try:
         if (not os.path.exists(_json_directory)):
             os.makedirs(_json_directory)
