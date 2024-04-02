@@ -7,12 +7,15 @@ import random
 class deathlink_relay(archi_relay):
     #Override archi-relay to only care about deathlink messages.
     slot_id = None # Slot ID to login as for our ghost user
+    _parent_relay: archi_relay = None
 
     def phantom_player(self) -> archipelago_site_slot_data:
         return self._multiworld_site_data.players[self.slot_id - 1] # Slot data from the website starts at 1 instead of 0, adjust!
 
     def __init__(self, parent_client: archi_relay, slot_id: int):
         self.slot_id = slot_id
+        self._parent_relay = parent_client
+        self._multiworld_site_data = parent_client._multiworld_site_data
         
         self._bot = parent_client._bot
         self._channel = parent_client._channel
@@ -29,8 +32,9 @@ class deathlink_relay(archi_relay):
         self._password = parent_client._password
         self._room_info = parent_client._room_info
         self._pending_payloads = []
+        self._previous_deaths = [] #Not used
 
-    async def handle_response(self, data: str):
+    async def handle_response(self, data: dict):
         try:
             cmd = data['cmd']
         except:
@@ -103,9 +107,10 @@ class deathlink_relay(archi_relay):
                 logging.error(e)
 
         elif (cmd == "Bounced"):
-            logging.critical("----------BOUNCED---------")
-            logging.critical(data)
-        
+            #{'cmd': 'Bounced', 'tags': ['DeathLink'], 'data': {'time': 1712093523.7267756, 'source': 'Ben', 'cause': ''}}
+            if ('data' in data and 'source' in data['data']):
+                await self._parent_relay.report_death(data)
+
         else:
             logging.warn("Received unhandled cmd: %s" % cmd)
 

@@ -45,6 +45,8 @@ class archi_relay:
     _archi_slot_info = [] # Player slot info from Archi (I know I know; this is sent from the 'Connected' cmd)
     _room_info = {} # Raw packet from when _room_info['data'] would be 'RoomInfo'
 
+    _previous_deaths = [] # List of deathlink packets to compare/ignore duplicates
+
     def connection_url(self) -> str:
         return "wss://archipelago.gg:" + self._multiworld_site_data.port
     
@@ -118,7 +120,7 @@ class archi_relay:
             logging.error(e)
 
     # Handle incoming data from Archipelago
-    async def handle_response(self, data: str):
+    async def handle_response(self, data: dict):
         try:
             cmd = data['cmd']
         except:
@@ -173,7 +175,7 @@ class archi_relay:
                 for player in self._multiworld_site_data.players:
                     logging.debug("[handle_response]Creating deathlink relay for user in slot %s (%s)" % (player.id, player.name))
                     new_relay = deathlink_relay(self, int(player.id))
-                    new_relay.start()
+                    await new_relay.start()
                     self._deathlink_relays.append(new_relay)
 
             except Exception as e:
@@ -264,6 +266,19 @@ class archi_relay:
             logging.info("Disconnected from game %s" % self._multiworld_site_data.game_id)
             await self.disconnect()
 
+    def _compare_deaths(self, death1, death2) -> bool:
+        # Returns True if they are the same.
+        pass
+
+    async def report_death(self, bounce_packet: dict): # Used for deathlink_relays to send deaths
+        #{'cmd': 'Bounced', 'tags': ['DeathLink'], 'data': {'time': 1712093523.7267756, 'source': 'Ben', 'cause': ''}}
+        if (bounce_packet in self._previous_deaths):
+            return
+        
+        self._previous_deaths.append(bounce_packet)
+        await self._chat_handler.add_message(chat_message("%s died <:Duc:1084164152681037845><:KerZ:1084164151317889034>" % bounce_packet['data']['source'], self._channel))
+
+
     def connected(self) -> bool:
         # Returns status of connection
         return (self._socket != None)
@@ -300,6 +315,8 @@ class archi_relay:
         self._password = password or ""
         self._room_info = {}
         self._pending_payloads = []
+
+        self._previous_deaths = []
 
 
 from deathlink_relay import deathlink_relay
