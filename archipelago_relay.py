@@ -52,6 +52,33 @@ class archi_relay:
         # Returns the player we plan on pretending to be, this should never be None so we won't bother try/excepting
         return self._multiworld_site_data.players[0]
     
+    async def _get_playerName_by_id(self, id: int):
+        for player in self.network_players:
+            if player.slot == id:
+                return player.name
+            
+    async def _get_playerAlias_by_id(self, id: int):
+        for player in self.network_players:
+            if player.slot == id:
+                return player.alias
+            
+    async def _get_playerGame_by_id(self, id: int):
+        slotName = ""
+        pName = await self._get_playerName_by_id(id)
+        for slot in self.network_slots:
+            if slot.name == pName:
+                return slot.game
+            
+    async def _get_itemName_by_id(self, id: int, playerId: int):
+        game = await self._get_playerGame_by_id(playerId)
+        item_name = self.game_data[game]['item_id_to_name'][int(id)]
+        return item_name
+    
+    async def _get_locationName_by_id(self, id: int, playerId: int):
+        game = await self._get_playerGame_by_id(playerId)
+        loc_name = self.game_data[game]['location_id_to_name'][int(id)]
+        return loc_name
+    
     def get_archi_game_version(self, game:str) -> int:
         return int(self._room_info['datapackage_versions'][game])
     
