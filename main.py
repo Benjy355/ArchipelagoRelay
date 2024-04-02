@@ -29,12 +29,8 @@ cmd_tree = app_commands.CommandTree(main_bot)
 #async def help(ctx: discord.Interaction):
 #    await ctx.response.send_message("BEN FINISH ME")
 
-@cmd_tree.command(name="connect", description="Starts monitoring/relaying messages (to this channel) from said game")
-@app_commands.describe(multiworld_link="Example: https://archipelago.gg/room/4_hWRGK1RPi...")
-@app_commands.describe(password="Password to connect to the multiworld game")
-@app_commands.describe(create_thread="*Not yet implemented*; will create a thread in the text channel.")
-async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "False"):
-    #TODO: CHECK IF WE HAVE PERMISSIONS IN THAT CHANNEL BEFORE STARTING
+async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "False"):
+    #actually handles connecting (so reconnect and connect can both access
     try:
         #Create our relay object to start tracking!
         #Check to make sure we don't have an active one with the same link
@@ -51,12 +47,21 @@ async def connect(ctx: discord.Interaction, multiworld_link: str, password: str 
     except FailedToStart as e:
         await ctx.response.send_message("Failed to connect! %s" % e.reason, ephemeral=True)
 
+
+@cmd_tree.command(name="connect", description="Starts monitoring/relaying messages (to this channel) from said game")
+@app_commands.describe(multiworld_link="Example: https://archipelago.gg/room/4_hWRGK1RPi...")
+@app_commands.describe(password="Password to connect to the multiworld game")
+@app_commands.describe(create_thread="*Not yet implemented*; will create a thread in the text channel.")
+async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "False"):
+    #TODO: CHECK IF WE HAVE PERMISSIONS IN THAT CHANNEL BEFORE STARTING
+    await do_connect(ctx, multiworld_link, password, create_thread)
+
 @cmd_tree.command(name="reconnect", description="Reconnects to the last Multiworld server")
 @app_commands.describe(create_thread="*Not yet implemented*; will create a thread in the text channel.")
 async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
     prev_link = Config.get("last_archi_connection_link", ctx.guild)
     if (prev_link):
-        await connect(ctx, prev_link, Config.get("last_archi_connection_password", ctx.guild), create_thread)
+        await do_connect(ctx, prev_link, Config.get("last_archi_connection_password", ctx.guild), create_thread)
     else:
         await ctx.response.send_message("I don't see a previous Multiworld game to connect to.", ephemeral=True)
 
