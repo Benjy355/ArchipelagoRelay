@@ -42,7 +42,6 @@ async def connect(ctx: discord.Interaction, multiworld_link: str, password: str 
 
 @main_bot.event
 async def on_ready():
-
     await cmd_tree.sync()
 
 main_bot.run(DISCORD_TOKEN, log_level=logging.WARN)
