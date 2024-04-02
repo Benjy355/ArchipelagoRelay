@@ -3,6 +3,7 @@ import websockets
 import discord
 import asyncio
 from archipelago_common import *
+from deathlink_relay import deathlink_relay
 import sys
 import os
 import game_cache
@@ -158,8 +159,6 @@ class archi_relay:
                 
                 # Rip out any games where we trust our cache
                 for game in games:
-                    testVer = self.get_archi_game_version(game)
-                    test = game_cache.get_game_cache(game, testVer)
                     if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
                         games.remove(game)
                 if (len(games) > 0):
@@ -170,6 +169,15 @@ class archi_relay:
                     logging.debug("Requesting game data for:")
                     logging.debug(games)
                     self.append_payload(payload)
+
+                    # Now that we are fully connected, create our deathlink players
+                    for player in self._multiworld_site_data.players:
+                        if (player.id != 0):
+                            new_relay = deathlink_relay(self, player.id)
+                            await new_relay.start()
+                            self._deathlink_relays.append(new_relay)
+
+
             except Exception as e:
                 logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -264,6 +272,10 @@ class archi_relay:
     
     async def disconnect(self):
         self._continue = False
+        for death_link in self._deathlink_relays:
+            death_link.disconnect()
+
+        self._deathlink_relays = []
         try:
             self._incoming_data_loop.cancel()
         except:
@@ -281,7 +293,7 @@ class archi_relay:
         self._multiworld_link = multiworld_link
         self._continue = True
         
-        self._deathlink_relays = None
+        self._deathlink_relays = []
         self._chat_handler = chat_handler_obj
 
         self._archi_slot_players = []
