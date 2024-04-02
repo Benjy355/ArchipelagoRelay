@@ -108,3 +108,9 @@ class deathlink_relay(archi_relay):
         
         else:
             logging.warn("Received unhandled cmd: %s" % cmd)
+
+    async def start(self):        
+        if (self._multiworld_site_data == None):
+            raise FailedToStart(reason="Multiworld data is 'None'")
+        
+        asyncio.create_task(coro=self._main_loop(), name="DEATHLINK_LOOP_%s_%s" % (self._multiworld_site_data.game_id, self.slot_id))
