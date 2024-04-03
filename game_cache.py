@@ -86,3 +86,4 @@ def update_game_cache(game_name: str, game_dict: dict) -> None:
         logging.error("[game_cache]")
         logging.error([exc_type, fname, exc_tb.tb_lineno])
         logging.error(e)
+
