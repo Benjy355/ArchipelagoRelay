@@ -6,6 +6,7 @@ from archipelago_common import *
 import sys
 import os
 import game_cache
+import random
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,6 +14,19 @@ logger = logging.getLogger(__name__)
 from archipelago_site_scraping import *
 
 from chat_handler import chat_handler, chat_message
+
+insults = [
+    "Looks like gravity just added you to its frag list!",
+    "Were you trying a pacifist run, or...?",
+    "Maybe we should start calling you 'Captain Respawn'.",
+    "Oops! Did your controller disconnect again? 😉",
+    "You're not just playing dead for the dramatic effect, right?",
+    "Achievement unlocked: Professional Cliff Diver.",
+    "Do you have a loyalty card for the afterlife? Because you might get a free coffee soon!",
+    "Even Schrödinger's cat knew when to stay in the box.",
+    "Careful, or you'll turn 'dying in-game' into an art form.",
+    "You've got the 'dying heroically' part down; now let's work on the 'not dying' bit."
+]
 
 class FailedToStart(Exception):
     reason: str = "Undefined"
@@ -231,9 +245,10 @@ class archi_relay:
                         logging.debug("\nRECEIVE:" + str(response))
                         await self.handle_response(response)
             except websockets.exceptions.ConnectionClosedError as e:
-                await self._chat_handler.add_message(chat_message("I've been disconnected from Archipelago", self._channel))
+                await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._channel))
                 logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
                 self._continue = False
+                await self.disconnect()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -276,8 +291,9 @@ class archi_relay:
             return
         
         self._previous_deaths.append(bounce_packet)
-        await self._chat_handler.add_message(chat_message("%s died <:Duc:1084164152681037845><:KerZ:1084164151317889034>" % bounce_packet['data']['source'], self._channel))
-
+        global insults
+        random_insult = insults[random.randint(0, len(insults)-1)]
+        await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (bounce_packet['data']['source'], random_insult), self._channel))
 
     def connected(self) -> bool:
         # Returns status of connection

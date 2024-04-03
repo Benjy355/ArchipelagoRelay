@@ -119,3 +119,23 @@ class deathlink_relay(archi_relay):
             raise FailedToStart(reason="Multiworld data is 'None'")
         
         asyncio.create_task(coro=self._main_loop(), name="DEATHLINK_LOOP_%s_%s" % (self._multiworld_site_data.game_id, self.slot_id))
+
+    async def receive_data_loop(self):
+        while self._continue:
+            try:
+                async for data in self._socket:
+                    decoded = decode(data)
+                    for response in decoded:
+                        logging.debug("\nRECEIVE:" + str(response))
+                        await self.handle_response(response)
+            except websockets.exceptions.ConnectionClosedError as e:
+                logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
+                self._continue = False
+                await self.disconnect()
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                logging.error("[RECEIVE_DATA_LOOP]")
+                logging.error([exc_type, fname, exc_tb.tb_lineno])
+                logging.error(e)
+            await asyncio.sleep(0.1)
