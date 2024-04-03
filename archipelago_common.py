@@ -46,7 +46,6 @@ class SlotType(ByValue, enum.IntFlag):
         """Mark this slot as having reached its goal instantly."""
         return self.value != 0b01
 
-
 class NetworkSlot(typing.NamedTuple):
     """Represents a particular slot across teams."""
     name: str
