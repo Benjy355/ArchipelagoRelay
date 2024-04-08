@@ -5,7 +5,8 @@ from discord_oauth import DISCORD_TOKEN
 from discord import app_commands
 import asyncio
 import logging
-from chat_handler import chat_handler, chat_message
+from chat_handler import chat_handler
+from discord.components import SelectOption
 
 from modal_disconnect import disconnect_modal
 
@@ -67,23 +68,33 @@ async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
     else:
         await ctx.response.send_message("I don't see a previous Multiworld game to connect to.", ephemeral=True)
 
-"""ONE DAY WE WILL HAVE MODAL SUPPORT :(
-async def disconnect_from_server(resp: str):
-    print(resp)
-    print("-----")
+async def _disconnect_from_game(calling_view: disconnect_modal, ctx: discord.Interaction):
+    for game in tracked_games[ctx.guild_id]:
+        if (game._multiworld_site_data.game_id == calling_view.items_dropdown.values[0]):
+            await game.disconnect()
+            tracked_games[ctx.guild_id].remove(game)
+            break
 
-@cmd_tree.command(description="Allows you to disconnect from your game(s)")
+    await ctx.response.send_message("Disconnecting from %s!" % calling_view.items_dropdown.values[0], ephemeral=False)
+
+@cmd_tree.command(name="disconnect", description="Allows you to disconnect from your game(s)")
 async def disconnect(ctx: discord.Interaction):
-    disconnect_options = ['1', '3', '5', 'fake']
-    #for game in tracked_games[ctx.guild_id]:
-    #    disconnect_options.append(game._multiworld_site_data.game_id)
-
-    the_modal = disconnect_modal(disconnect_from_server, disconnect_options)
-    await ctx.response.send_modal(the_modal)"""
+    disconnect_options = []
+    if (ctx.guild_id in tracked_games):
+        for game in tracked_games[ctx.guild_id]:
+            if game.connected:
+                disconnect_options.append(SelectOption(label=game._multiworld_site_data.game_id, description="100 characters max!"))
+        
+    if (len(disconnect_options) > 0):
+        the_modal = disconnect_modal(_disconnect_from_game, disconnect_options)
+        await ctx.response.send_message(content="Which game?", view=the_modal, ephemeral=True)
+    else:
+        await ctx.response.send_message(content="I'm not connected to any games!", ephemeral=True)
 
 @main_bot.event
 async def on_ready():
     await cmd_tree.sync()
     main_chat_handler.start()
+    print("Ready!")
 
 main_bot.run(DISCORD_TOKEN, log_level=logging.WARN)

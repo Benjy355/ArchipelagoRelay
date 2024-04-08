@@ -302,7 +302,7 @@ class archi_relay:
     async def disconnect(self):
         self._continue = False
         for death_link in self._deathlink_relays:
-            death_link.disconnect()
+            await death_link.disconnect()
 
         self._deathlink_relays = []
         try:
@@ -313,7 +313,7 @@ class archi_relay:
             self._outgoing_data_loop.cancel()
         except:
             pass
-        self._socket.close()
+        await self._socket.close()
 
     def __init__(self, bot_client: discord.Client, response_channel: discord.channel.TextChannel, multiworld_link: str, chat_handler_obj: chat_handler, password: str):
         self._bot = bot_client
