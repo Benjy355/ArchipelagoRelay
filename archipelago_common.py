@@ -85,7 +85,7 @@ decode = JSONDecoder(object_hook=_object_hook).decode
 def tuplize_version(version: str) -> Version:
     return Version(*(int(piece, 10) for piece in version.split(".")))
 
-__Archiversion__ = "0.4.4" #TODO: THIS IS SCUFFED LOL
+__Archiversion__ = "0.4.5" #TODO: THIS IS SCUFFED LOL
 version_tuple = tuplize_version(__Archiversion__)
 
 def get_ssl_context():
@@ -112,5 +112,6 @@ def _scan_for_TypedTuples(obj: typing.Any) -> typing.Any:
 def encode(obj: typing.Any) -> str:
     return _encode(_scan_for_TypedTuples(obj))
 
+# ChatGPT ahh code 💀
 def flip_dict(input_dict):
     return {v: k for k, v in input_dict.items()}
