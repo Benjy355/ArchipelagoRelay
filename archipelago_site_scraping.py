@@ -2,7 +2,10 @@
 
 import requests
 from bs4 import BeautifulSoup
+import logging
+logger = logging.getLogger(__name__)
 
+import os, sys
 
 class archipelago_site_slot_data:
     #Container for archipelago_site_data players dict
@@ -25,8 +28,14 @@ class archipelago_site_slot_data:
         id = columns[0].text
         name = columns[1].find("a").text
         game = columns[2].text
-        download_link = columns[3].find("a").attrs['href']
-        tracker_page = columns[4].find("a").attrs['href']
+        try:
+            download_link = columns[3].find("a").attrs['href']
+        except:
+            download_link = None
+        try:
+            tracker_page = columns[4].find("a").attrs['href']
+        except:
+            tracker_page = None
         return cls(id=id, name=name, game=game, download_link=download_link, tracker_page=tracker_page)
         
 
@@ -66,7 +75,12 @@ def get_site_data(url: str) -> archipelago_site_data:
                 return_data.players.append(archipelago_site_slot_data.from_soup(player_html))
         
             return return_data
-        except: #TODO: LOG THE EXCEPTION DETAILS
+        except Exception as e: #TODO: LOG THE EXCEPTION DETAILS
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            logging.error("[RECEIVE_DATA_LOOP]")
+            logging.error([exc_type, fname, exc_tb.tb_lineno])
+            logging.error(e)
             return None
     else:
         return None
