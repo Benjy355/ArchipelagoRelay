@@ -8,7 +8,7 @@ import logging
 from chat_handler import chat_handler
 from discord.components import SelectOption
 
-from modal_disconnect import disconnect_modal
+from disconnect_view import disconnect_view
 
 # Perms int 377957207104
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
@@ -86,10 +86,15 @@ async def disconnect(ctx: discord.Interaction):
                 disconnect_options.append(SelectOption(label=game._multiworld_site_data.game_id, description="100 characters max!"))
         
     if (len(disconnect_options) > 0):
-        the_modal = disconnect_modal(_disconnect_from_game, disconnect_options)
+        the_modal = disconnect_view(_disconnect_from_game, disconnect_options)
         await ctx.response.send_message(content="Which game?", view=the_modal, ephemeral=True)
     else:
         await ctx.response.send_message(content="I'm not connected to any games!", ephemeral=True)
+
+@cmd_tree.command(name="lookout", description="Have the bot ping you when an item is found!")
+@app_commands.describe(item_name="Name of the item to look out for")
+async def track_item(ctx: discord.Interaction, item_name: str):
+    pass
 
 @main_bot.event
 async def on_ready():
