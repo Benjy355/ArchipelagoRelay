@@ -9,6 +9,11 @@ from chat_handler import chat_handler
 from discord.components import SelectOption
 
 from disconnect_view import disconnect_view
+from track_item_view import track_item_view
+
+from archipelago_relay import TrackedItem
+
+import game_cache
 
 # Perms int 377957207104
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
@@ -68,7 +73,7 @@ async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
     else:
         await ctx.response.send_message("I don't see a previous Multiworld game to connect to.", ephemeral=True)
 
-async def _disconnect_from_game(calling_view: disconnect_modal, ctx: discord.Interaction):
+async def _disconnect_from_game(calling_view: disconnect_view, ctx: discord.Interaction):
     for game in tracked_games[ctx.guild_id]:
         if (game._multiworld_site_data.game_id == calling_view.items_dropdown.values[0]):
             await game.disconnect()
@@ -83,18 +88,59 @@ async def disconnect(ctx: discord.Interaction):
     if (ctx.guild_id in tracked_games):
         for game in tracked_games[ctx.guild_id]:
             if game.connected:
-                disconnect_options.append(SelectOption(label=game._multiworld_site_data.game_id, description="100 characters max!"))
+                disconnect_options.append(SelectOption(label=game._multiworld_site_data.game_id))
         
     if (len(disconnect_options) > 0):
-        the_modal = disconnect_view(_disconnect_from_game, disconnect_options)
-        await ctx.response.send_message(content="Which game?", view=the_modal, ephemeral=True)
+        the_view = disconnect_view(_disconnect_from_game, disconnect_options)
+        await ctx.response.send_message(content="Which game?", view=the_view, ephemeral=True)
     else:
         await ctx.response.send_message(content="I'm not connected to any games!", ephemeral=True)
 
+async def _handle_track_item_view_callback(calling_view: track_item_view, ctx: discord.Interaction):
+    item_to_track = calling_view.item_to_track
+    found_item_in_game = False
+    if (item_to_track == ""):
+        return
+    
+    for multi_world_game in tracked_games[ctx.guild_id]:
+        if (multi_world_game._multiworld_site_data.game_id == calling_view.items_dropdown.values[0]):
+            # Look inside the game_caches for this multiworld, and make sure the item exists before we start watching for it
+            games = []
+            for slot in multi_world_game._archi_slot_info:
+                if (not slot.game in games):
+                    games.append(slot.game)
+            
+            for game in games:
+                temp_cache = game_cache.get_game_cache(game)['item_name_to_id']
+                keys = temp_cache.keys()
+                # Case insensitivity work around incoming, PREPARE YOUR ANGUS
+                uppercase_item = item_to_track.upper()
+                for item in keys:
+                    if uppercase_item == item.upper():
+                        found_item_in_game = True
+                        new_tracked_item = TrackedItem(temp_cache[item], ctx.user.mention)
+                        multi_world_game.items_to_track.append(new_tracked_item)
+            
+            if (found_item_in_game):
+                await ctx.response.send_message("Tracking %s!" % item_to_track, ephemeral=False)
+            else:
+                await ctx.response.send_message("I couldn't find %s in any games in that multiworld!" % item_to_track, ephemeral=True)
+
 @cmd_tree.command(name="lookout", description="Have the bot ping you when an item is found!")
-@app_commands.describe(item_name="Name of the item to look out for")
+@app_commands.describe(item_name="The name of the item you want to track, (Eg. 'Ice Trap')")
 async def track_item(ctx: discord.Interaction, item_name: str):
-    pass
+    multiworld_games = []
+    if (ctx.guild_id in tracked_games):
+        for game in tracked_games[ctx.guild_id]:
+            if game.connected:
+                multiworld_games.append(SelectOption(label=game._multiworld_site_data.game_id))
+
+    if (len(multiworld_games) > 0):
+        the_view = track_item_view(_handle_track_item_view_callback, multiworld_games, item_name)
+        await ctx.response.send_message(content="Which multiworld game is this item in? Note: If you disconnect I will not remember what items you wanted tracked.", view=the_view, ephemeral=True)
+    else:
+        await ctx.response.send_message(content="Please connect to a multiworld server first", ephemeral=True)
+    
 
 @main_bot.event
 async def on_ready():

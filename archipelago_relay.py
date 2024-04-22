@@ -34,6 +34,14 @@ class FailedToStart(Exception):
         self.reason = reason
         super().__init__(self)
 
+class TrackedItem(): #Glorified dict
+    item_id: int = 0
+    user_mention_str: str = "" # <@115153868165349382>
+
+    def __init__(self, item_id:int, user_mention_str: str):
+        self.item_id = item_id
+        self.user_mention_str = user_mention_str
+
 class archi_relay:
     _bot: discord.Client = None # Discord client
     _channel: discord.TextChannel = None # Channel where messages are relayed to
@@ -61,6 +69,8 @@ class archi_relay:
 
     _previous_deaths = [] # List of deathlink packets to compare/ignore duplicates
 
+    items_to_track: list[TrackedItem]= [] # 
+
     def connection_url(self) -> str:
         return "wss://archipelago.gg:" + self._multiworld_site_data.port
     
@@ -72,11 +82,13 @@ class archi_relay:
         for player in self._archi_players:
             if player.slot == id:
                 return player.name
+        return "Undefined"
             
     async def _get_playerAlias_by_id(self, id: int):
         for player in self._archi_players:
             if player.slot == id:
                 return player.alias
+        return "Undefined"
             
     async def _get_playerGame_by_id(self, id: int):
         slotName = ""
@@ -84,15 +96,24 @@ class archi_relay:
         for slot in self._archi_slot_info:
             if slot.name == pName:
                 return slot.game
+        return None
             
     async def _get_itemName_by_id(self, id: int, playerId: int):
-        game = await self._get_playerGame_by_id(playerId)
-        item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
+        try:
+            game = await self._get_playerGame_by_id(playerId)
+            item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
+        except:
+            logging.error("Failed to get item name from ID for item %i" % id)
+            return "Undefined"
         return item_name
     
     async def _get_locationName_by_id(self, id: int, playerId: int):
-        game = await self._get_playerGame_by_id(playerId)
-        loc_name = game_cache.get_game_cache(game)['location_id_to_name'][int(id)]
+        try:
+            game = await self._get_playerGame_by_id(playerId)
+            loc_name = game_cache.get_game_cache(game)['location_id_to_name'][int(id)]
+        except:
+            logging.error("Failed to get location name from ID for location %i" % id)
+            return "Undefined"
         return loc_name
     
     def get_archi_game_version(self, game:str) -> int:
@@ -100,6 +121,12 @@ class archi_relay:
     
     def append_payload(self, payload):
         self._pending_payloads.append(encode([payload]))
+
+    async def check_for_tracked_item(self, item_id: int, player_id: int):
+        item_name = await self._get_itemName_by_id(item_id, player_id)
+        for item in self.items_to_track:
+            if (item.item_id == item_id):
+                self._chat_handler.add_message("%s! %s has been found!" % (item.user_mention_str, item_name))
     
     async def handle_print_json(self, json: dict): # This has not been re-written yet since v1...
         try:
@@ -112,13 +139,14 @@ class archi_relay:
                     playerName = await self._get_playerAlias_by_id(int(node['text']))
                     final_text += "**%s**" % playerName
                 elif node['type'] == "item_id":
-                    #We only care if it's useful or progression
+                    self.check_for_tracked_item(int(node['text']), int(node['player']))
+                    #We only care if it's useful or progression (or a trap!)
                     if node['flags'] & 0b001 or node['flags'] & 0b010 or node['flags'] & 0b100:
                         if node['flags'] & 0b001: #Progression
                             final_text += "**%s**" % await self._get_itemName_by_id(int(node['text']), int(node['player']))
                         elif node['flags'] & 0b010: #Useful
                             final_text += "*%s*" % await self._get_itemName_by_id(int(node['text']), int(node['player']))
-                        else:
+                        else: #Trap
                             final_text += "<:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % await self._get_itemName_by_id(int(node['text']), int(node['player']))
                     else:
                         #Don't bother.
