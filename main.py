@@ -19,7 +19,7 @@ import game_cache
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
 #breakHere = None
 
-#logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
 
 tracked_games: dict[list[archi_relay]] = {} # {guild_id: [archi_relays]}
 
@@ -119,12 +119,12 @@ async def _handle_track_item_view_callback(calling_view: track_item_view, ctx: d
                     if uppercase_item == item.upper():
                         found_item_in_game = True
                         new_tracked_item = TrackedItem(temp_cache[item], ctx.user.mention)
-                        multi_world_game.items_to_track.append(new_tracked_item)
+                        multi_world_game.add_item_to_track(new_tracked_item)
             
             if (found_item_in_game):
                 await ctx.response.send_message("Tracking %s!" % item_to_track, ephemeral=False)
             else:
-                await ctx.response.send_message("I couldn't find %s in any games in that multiworld!" % item_to_track, ephemeral=True)
+                await ctx.response.send_message("I couldn't find %s in any games in that multiworld :(" % item_to_track, ephemeral=True)
 
 @cmd_tree.command(name="lookout", description="Have the bot ping you when an item is found!")
 @app_commands.describe(item_name="The name of the item you want to track, (Eg. 'Ice Trap')")

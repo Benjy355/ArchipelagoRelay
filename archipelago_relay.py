@@ -42,6 +42,15 @@ class TrackedItem(): #Glorified dict
         self.item_id = item_id
         self.user_mention_str = user_mention_str
 
+    def as_string(self):
+        return "%i;%s" % (self.item_id, self.user_mention_str)
+    
+    @classmethod
+    def from_string(cls, string: str):
+        split = string.split(";", 1)
+        return cls(int(split[0]), split[1])
+
+
 class archi_relay:
     _bot: discord.Client = None # Discord client
     _channel: discord.TextChannel = None # Channel where messages are relayed to
@@ -69,7 +78,35 @@ class archi_relay:
 
     _previous_deaths = [] # List of deathlink packets to compare/ignore duplicates
 
-    items_to_track: list[TrackedItem]= [] # 
+    _items_to_track: list[TrackedItem]= []
+
+    def add_item_to_track(self, item: TrackedItem) -> None:
+        if (not item in self._items_to_track):
+            self._items_to_track.append(item)
+            self.save_tracked_items()
+        else:
+            logging.warn("Ignoring track request for duplicate item")
+    
+    # Saves the items being tracked to the config
+    def save_tracked_items(self) -> None:
+        final_str = ""
+        for item in self._items_to_track:
+            final_str += item.as_string() + "\n"
+        
+        Config.set("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, final_str, self._channel.guild)
+
+    # Loads tracked items into ... itself.
+    def load_tracked_items(self) -> None:
+        serialized = Config.get("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, self._channel.guild, "")
+        main_split = serialized.split()
+        for item in main_split:
+            try:
+                temp_item = TrackedItem.from_string(item)
+                logging.debug("LOAD_TRACKED_ITEMS_ITEM: %s" % item)
+                self.add_item_to_track(temp_item)
+            except:
+                logging.error("Failed to parse TrackedItem from %s" % item)
+
 
     def connection_url(self) -> str:
         return "wss://archipelago.gg:" + self._multiworld_site_data.port
@@ -78,19 +115,19 @@ class archi_relay:
         # Returns the player we plan on pretending to be, this should never be None so we won't bother try/excepting
         return self._multiworld_site_data.players[0]
     
-    async def _get_playerName_by_id(self, id: int):
+    async def _get_playerName_by_id(self, id: int) -> str:
         for player in self._archi_players:
             if player.slot == id:
                 return player.name
         return "Undefined"
             
-    async def _get_playerAlias_by_id(self, id: int):
+    async def _get_playerAlias_by_id(self, id: int) -> str:
         for player in self._archi_players:
             if player.slot == id:
                 return player.alias
         return "Undefined"
             
-    async def _get_playerGame_by_id(self, id: int):
+    async def _get_playerGame_by_id(self, id: int) -> str:
         slotName = ""
         pName = await self._get_playerName_by_id(id)
         for slot in self._archi_slot_info:
@@ -98,7 +135,7 @@ class archi_relay:
                 return slot.game
         return None
             
-    async def _get_itemName_by_id(self, id: int, playerId: int):
+    async def _get_itemName_by_id(self, id: int, playerId: int) -> str:
         try:
             game = await self._get_playerGame_by_id(playerId)
             item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
@@ -107,7 +144,7 @@ class archi_relay:
             return "Undefined"
         return item_name
     
-    async def _get_locationName_by_id(self, id: int, playerId: int):
+    async def _get_locationName_by_id(self, id: int, playerId: int) -> str:
         try:
             game = await self._get_playerGame_by_id(playerId)
             loc_name = game_cache.get_game_cache(game)['location_id_to_name'][int(id)]
@@ -124,7 +161,7 @@ class archi_relay:
 
     async def check_for_tracked_item(self, item_id: int, player_id: int):
         item_name = await self._get_itemName_by_id(item_id, player_id)
-        for item in self.items_to_track:
+        for item in self._items_to_track:
             if (item.item_id == item_id):
                 self._chat_handler.add_message("%s! %s has been found!" % (item.user_mention_str, item_name))
     
@@ -213,12 +250,15 @@ class archi_relay:
                     logging.debug(games)
                     self.append_payload(payload)
 
-                    # Now that we are fully connected, create our deathlink relays
+                # Now that we are fully connected, create our deathlink relays
                 for player in self._multiworld_site_data.players:
                     logging.debug("[handle_response]Creating deathlink relay for user in slot %s (%s)" % (player.id, player.name))
                     new_relay = deathlink_relay(self, int(player.id))
                     await new_relay.start()
                     self._deathlink_relays.append(new_relay)
+
+                # Also, load up our tracked items
+                self.load_tracked_items()
 
             except Exception as e:
                 logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
