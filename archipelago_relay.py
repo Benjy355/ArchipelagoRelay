@@ -139,9 +139,13 @@ class archi_relay:
     async def _get_itemName_by_id(self, id: int, playerId: int) -> str:
         try:
             game = await self._get_playerGame_by_id(playerId)
-            item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
-        except:
+            item_name = game_cache.get_game_cache(game)[int(id)]
+        except Exception as e:
             logging.error("Failed to get item name from ID for item %i" % id)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            logging.error([exc_type, fname, exc_tb.tb_lineno])
+            logging.error(e)
             return "Undefined"
         return item_name
     
@@ -149,8 +153,12 @@ class archi_relay:
         try:
             game = await self._get_playerGame_by_id(playerId)
             loc_name = game_cache.get_game_cache(game)['location_id_to_name'][int(id)]
-        except:
+        except Exception as e:
             logging.error("Failed to get location name from ID for location %i" % id)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            logging.error([exc_type, fname, exc_tb.tb_lineno])
+            logging.error(e)
             return "Undefined"
         return loc_name
     
@@ -177,7 +185,7 @@ class archi_relay:
                     playerName = await self._get_playerAlias_by_id(int(node['text']))
                     final_text += "**%s**" % playerName
                 elif node['type'] == "item_id":
-                    self.check_for_tracked_item(int(node['text']), int(node['player']))
+                    await self.check_for_tracked_item(int(node['text']), int(node['player']))
                     #We only care if it's useful or progression (or a trap!)
                     if node['flags'] & 0b001 or node['flags'] & 0b010 or node['flags'] & 0b100:
                         if node['flags'] & 0b001: #Progression
