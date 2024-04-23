@@ -77,7 +77,7 @@ def update_game_cache(game_name: str, game_dict: dict) -> None:
     try:
         io_file = open(_json_file % game_name, 'w')
         json.dump(game_dict, io_file)
-        logging.debug("[game_cache]Updated game cache for %s!" % game_name)
+        logging.info("[game_cache]Updated game cache for %s!" % game_name)
         io_file.close()
     except Exception as e:
         logging.error("[game_cache]Failed to save cache for %s" % game_name)

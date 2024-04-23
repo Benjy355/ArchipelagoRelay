@@ -241,6 +241,8 @@ class archi_relay:
                 for game in games:
                     if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
                         games.remove(game)
+                    else:
+                        logging.info("Game_Cache returned None for game %s" % game)
                 if (len(games) > 0):
                     payload = {
                         'cmd': 'GetDataPackage',
