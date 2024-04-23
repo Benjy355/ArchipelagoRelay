@@ -240,6 +240,7 @@ class archi_relay:
                 # Rip out any games where we trust our cache
                 for game in games:
                     if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
+                        logging.info("Game_Cache for %s is good" % game)
                         games.remove(game)
                     else:
                         logging.info("Game_Cache returned None for game %s" % game)
@@ -248,8 +249,8 @@ class archi_relay:
                         'cmd': 'GetDataPackage',
                         'games': games
                     }
-                    logging.debug("Requesting game data for:")
-                    logging.debug(games)
+                    logging.info("Requesting game data for:")
+                    logging.info(games)
                     self.append_payload(payload)
 
                 # Now that we are fully connected, create our deathlink relays
