@@ -23,7 +23,7 @@ class deathlink_relay(archi_relay):
         self._multiworld_link = parent_client._multiworld_link
         self._continue = True
         
-        self._deathlink_relays = None
+        self._deathlink_relays = [] 
         self._chat_handler = parent_client._chat_handler
 
         self._archi_slot_players = parent_client._archi_slot_players
