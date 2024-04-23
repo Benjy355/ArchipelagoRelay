@@ -115,3 +115,7 @@ def encode(obj: typing.Any) -> str:
 # ChatGPT ahh code 💀
 def flip_dict(input_dict):
     return {v: k for k, v in input_dict.items()}
+
+# Fuck me
+def convert_keys_to_int(input_dict):
+    return {int(k): v for k, v in input_dict.items() if k.isdigit()}

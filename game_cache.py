@@ -4,7 +4,7 @@ import json
 import os
 import sys
 
-from archipelago_common import flip_dict
+from archipelago_common import flip_dict, convert_keys_to_int
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,7 +32,10 @@ def get_game_cache(game_name: str, version: int = None) -> dict:
                 return None
             try:
                 logging.info("[game_cache]Loading cache for %s" % game_name)
-                _game_data[game_name] = json.loads(json_file.read())
+                temp_game_data = json.loads(json_file.read())
+                temp_game_data['item_id_to_name'] = convert_keys_to_int(temp_game_data['item_id_to_name'])
+                temp_game_data['location_id_to_name'] = convert_keys_to_int(temp_game_data['location_id_to_name'])
+                _game_data[game_name] = temp_game_data
             except:
                 json_file.close()
                 logging.error("[game_cache]Cache for %s is corrupt (file level)! Requesting...." % game_name)
