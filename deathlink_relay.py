@@ -32,7 +32,7 @@ class deathlink_relay(archi_relay):
         self._password = parent_client._password
         self._room_info = parent_client._room_info
         self._pending_payloads = []
-        self._previous_deaths = [] #Not used
+        self._previous_deaths = [] #Not used in Deathlink
 
     async def handle_response(self, data: dict):
         try:
@@ -66,7 +66,8 @@ class deathlink_relay(archi_relay):
                     self._archi_players.append(p)
                 for k, s in data["slot_info"].items():
                     self._archi_slot_info.append(s)
-                # Get our cache together.
+                #Get our cache together.
+                """No need for game data in a cache, no?
                 games = []
                 for slot in self._archi_slot_info:
                     if (not slot.game in games):
@@ -83,7 +84,7 @@ class deathlink_relay(archi_relay):
                     }
                     logging.debug("Requesting game data for:")
                     logging.debug(games)
-                    self.append_payload(payload)
+                    self.append_payload(payload)"""
             except Exception as e:
                 logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
                 exc_type, exc_obj, exc_tb = sys.exc_info()

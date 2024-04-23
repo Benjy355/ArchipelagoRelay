@@ -31,7 +31,7 @@ def get_game_cache(game_name: str, version: int = None) -> dict:
                 logging.error("[game_cache]Failed to open JSON cache file for %s!" % game_name)
                 return None
             try:
-                logging.debug("[game_cache]Loading cache for %s" % game_name)
+                logging.info("[game_cache]Loading cache for %s" % game_name)
                 _game_data[game_name] = json.loads(json_file.read())
             except:
                 json_file.close()
@@ -41,7 +41,7 @@ def get_game_cache(game_name: str, version: int = None) -> dict:
             json_file.close()
         else:
             # No cache available, return None
-            logging.debug("[game_cache]No cache for %s found" % game_name)
+            logging.info("[game_cache]No cache for %s found" % game_name)
             return None
     # We have something in our memory, let's confirm our version
     try:

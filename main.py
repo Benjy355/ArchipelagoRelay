@@ -19,7 +19,7 @@ import game_cache
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
 #breakHere = None
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 tracked_games: dict[list[archi_relay]] = {} # {guild_id: [archi_relays]}
 
