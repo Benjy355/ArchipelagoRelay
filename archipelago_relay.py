@@ -139,7 +139,7 @@ class archi_relay:
     async def _get_itemName_by_id(self, id: int, playerId: int) -> str:
         try:
             game = await self._get_playerGame_by_id(playerId)
-            item_name = game_cache.get_game_cache(game)[int(id)]
+            item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
         except Exception as e:
             logging.error("Failed to get item name from ID for item %i" % id)
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -250,7 +250,6 @@ class archi_relay:
                 # Note to self, do not dynmamically update THE FUCKING ARRAY YOU ARE FOR X IN YING IN
                 requested_games = copy.deepcopy(games)
                 for game in games:
-                    test = game_cache.get_game_cache(game, self.get_archi_game_version(game))
                     if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
                         logging.info("Game_Cache for %s is good" % game)
                         requested_games.remove(game)
