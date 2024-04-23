@@ -7,6 +7,7 @@ import sys
 import os
 import game_cache
 import random
+import copy
 
 import logging
 logger = logging.getLogger(__name__)
@@ -239,7 +240,7 @@ class archi_relay:
                 
                 # Rip out any games where we trust our cache
                 # Note to self, do not dynmamically update THE FUCKING ARRAY YOU ARE FOR X IN YING IN
-                requested_games = games
+                requested_games = copy.deepcopy(games)
                 for game in games:
                     test = game_cache.get_game_cache(game, self.get_archi_game_version(game))
                     if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
@@ -247,7 +248,7 @@ class archi_relay:
                         requested_games.remove(game)
                     else:
                         logging.info("Game_Cache returned None for game %s" % game)
-                if (len(games) > 0):
+                if (len(requested_games) > 0):
                     payload = {
                         'cmd': 'GetDataPackage',
                         'games': requested_games
