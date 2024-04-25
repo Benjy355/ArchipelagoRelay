@@ -165,8 +165,8 @@ class archi_relay:
     def append_payload(self, payload):
         self._pending_payloads.append(encode([payload]))
 
-    async def check_for_tracked_item(self, item_id: int, player_id: int):
-        item_name = await self._get_itemName_by_id(item_id, player_id)
+    def check_for_tracked_item(self, item_id: int, player_id: int):
+        item_name = self._get_itemName_by_id(item_id, player_id)
         for item in self._items_to_track:
             if (item.item_id == item_id):
                 self._chat_handler.add_message("%s! %s has been found!" % (item.user_mention_str, item_name))
@@ -182,7 +182,7 @@ class archi_relay:
                     playerName = self._get_playerAlias_by_id(int(node['text']))
                     final_text += "**%s**" % playerName
                 elif node['type'] == "item_id":
-                    await self.check_for_tracked_item(int(node['text']), int(node['player']))
+                    self.check_for_tracked_item(int(node['text']), int(node['player']))
                     #We only care if it's useful or progression (or a trap!)
                     if node['flags'] & 0b001 or node['flags'] & 0b010 or node['flags'] & 0b100:
                         if node['flags'] & 0b001: #Progression
