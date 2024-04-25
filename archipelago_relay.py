@@ -9,9 +9,6 @@ import game_cache
 import random
 import copy
 
-import logging
-logger = logging.getLogger(__name__)
-
 from archipelago_site_scraping import *
 
 from chat_handler import chat_handler, chat_message
@@ -116,29 +113,29 @@ class archi_relay:
         # Returns the player we plan on pretending to be, this should never be None so we won't bother try/excepting
         return self._multiworld_site_data.players[0]
     
-    async def _get_playerName_by_id(self, id: int) -> str:
+    def _get_playerName_by_id(self, id: int) -> str:
         for player in self._archi_players:
             if player.slot == id:
                 return player.name
         return "Undefined"
             
-    async def _get_playerAlias_by_id(self, id: int) -> str:
+    def _get_playerAlias_by_id(self, id: int) -> str:
         for player in self._archi_players:
             if player.slot == id:
                 return player.alias
         return "Undefined"
             
-    async def _get_playerGame_by_id(self, id: int) -> str:
+    def _get_playerGame_by_id(self, id: int) -> str:
         slotName = ""
-        pName = await self._get_playerName_by_id(id)
+        pName = self._get_playerName_by_id(id)
         for slot in self._archi_slot_info:
             if slot.name == pName:
                 return slot.game
         return None
             
-    async def _get_itemName_by_id(self, id: int, playerId: int) -> str:
+    def _get_itemName_by_id(self, id: int, playerId: int) -> str:
         try:
-            game = await self._get_playerGame_by_id(playerId)
+            game = self._get_playerGame_by_id(playerId)
             item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
         except Exception as e:
             logging.error("Failed to get item name from ID for item %i" % id)
@@ -149,9 +146,9 @@ class archi_relay:
             return "Undefined"
         return item_name
     
-    async def _get_locationName_by_id(self, id: int, playerId: int) -> str:
+    def _get_locationName_by_id(self, id: int, playerId: int) -> str:
         try:
-            game = await self._get_playerGame_by_id(playerId)
+            game = self._get_playerGame_by_id(playerId)
             loc_name = game_cache.get_game_cache(game)['location_id_to_name'][int(id)]
         except Exception as e:
             logging.error("Failed to get location name from ID for location %i" % id)
@@ -182,25 +179,25 @@ class archi_relay:
                 if not "type" in node:
                     final_text += node['text']
                 elif node['type'] == "player_id":
-                    playerName = await self._get_playerAlias_by_id(int(node['text']))
+                    playerName = self._get_playerAlias_by_id(int(node['text']))
                     final_text += "**%s**" % playerName
                 elif node['type'] == "item_id":
                     await self.check_for_tracked_item(int(node['text']), int(node['player']))
                     #We only care if it's useful or progression (or a trap!)
                     if node['flags'] & 0b001 or node['flags'] & 0b010 or node['flags'] & 0b100:
                         if node['flags'] & 0b001: #Progression
-                            final_text += "**%s**" % await self._get_itemName_by_id(int(node['text']), int(node['player']))
+                            final_text += "**%s**" % self._get_itemName_by_id(int(node['text']), int(node['player']))
                         elif node['flags'] & 0b010: #Useful
-                            final_text += "*%s*" % await self._get_itemName_by_id(int(node['text']), int(node['player']))
+                            final_text += "*%s*" % self._get_itemName_by_id(int(node['text']), int(node['player']))
                         else: #Trap
-                            final_text += "<:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % await self._get_itemName_by_id(int(node['text']), int(node['player']))
+                            final_text += "<:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % self._get_itemName_by_id(int(node['text']), int(node['player']))
                     else:
                         #Don't bother.
                         return
                 elif node['type'] == "location_id":
-                    final_text += await self._get_locationName_by_id(int(node['text']), int(node['player']))
+                    final_text += self._get_locationName_by_id(int(node['text']), int(node['player']))
 
-            await self._chat_handler.add_message(chat_message(final_text, self._channel))
+            await self._chat_handler.add_message(chat_message(final_text, self._channel)) 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
