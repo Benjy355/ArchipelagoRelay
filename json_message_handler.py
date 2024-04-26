@@ -30,7 +30,7 @@ class json_message_handler:
 
             # Our message has been filtered, now let's fill in the relevent data
             if node['type'] == 'text':
-                pass # Do nothing
+                pass # Do nothing, but leave this here just in case we wanna do stuff later I dunno
             elif node['type'] == 'player_id':
                 filtered_node_txt = filtered_node_txt % self.parent_relay._get_playerAlias_by_id(int(node['text']))
             elif node['type'] == 'item_id':
@@ -50,7 +50,7 @@ class json_message_handler:
         try:
             final_string = ""
             for node in json:
-                node_text = self._handle_node(node)
+                node_text = self._filter_node(node)
                 if (node_text != None and node_text != ""):
                     final_string += node_text % node['text']
                 else:

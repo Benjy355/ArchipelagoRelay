@@ -12,7 +12,6 @@ import copy
 from archipelago_site_scraping import *
 
 from chat_handler import chat_handler, chat_message
-
 insults = [
     "Looks like gravity just added you to its frag list!",
     "Were you trying a pacifist run, or...?",
@@ -77,6 +76,8 @@ class archi_relay:
     _previous_deaths = [] # List of deathlink packets to compare/ignore duplicates
 
     _items_to_track: list[TrackedItem]= []
+
+    _json_handler = None
 
     def add_item_to_track(self, item: TrackedItem) -> None:
         if (not item in self._items_to_track):
@@ -173,29 +174,10 @@ class archi_relay:
     
     async def handle_print_json(self, json: dict): # This has not been re-written yet since v1...
         try:
-            final_text = ""
-            for node in json:
-                # If there is no 'type' it is just normal text
-                if not "type" in node:
-                    final_text += node['text']
-                elif node['type'] == "player_id":
-                    playerName = self._get_playerAlias_by_id(int(node['text']))
-                    final_text += "**%s**" % playerName
-                elif node['type'] == "item_id":
-                    self.check_for_tracked_item(int(node['text']), int(node['player']))
-                    #We only care if it's useful or progression (or a trap!)
-                    if node['flags'] & 0b001 or node['flags'] & 0b010 or node['flags'] & 0b100:
-                        if node['flags'] & 0b001: #Progression
-                            final_text += "**%s**" % self._get_itemName_by_id(int(node['text']), int(node['player']))
-                        elif node['flags'] & 0b010: #Useful
-                            final_text += "*%s*" % self._get_itemName_by_id(int(node['text']), int(node['player']))
-                        else: #Trap
-                            final_text += "<:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % self._get_itemName_by_id(int(node['text']), int(node['player']))
-                    else:
-                        #Don't bother.
-                        return
-                elif node['type'] == "location_id":
-                    final_text += self._get_locationName_by_id(int(node['text']), int(node['player']))
+            if (self._json_handler == None):
+                self._json_handler = json_message_handler(self)
+            
+            final_text = self._json_handler.convert_json_msg(json)
 
             await self._chat_handler.add_message(chat_message(final_text, self._channel)) 
         except Exception as e:
@@ -415,3 +397,4 @@ class archi_relay:
 
 
 from deathlink_relay import deathlink_relay
+from json_message_handler import json_message_handler
