@@ -178,8 +178,8 @@ class archi_relay:
                 self._json_handler = json_message_handler(self)
             
             final_text = self._json_handler.convert_json_msg(json)
-
-            await self._chat_handler.add_message(chat_message(final_text, self._channel)) 
+            if (final_text != None and final_text != ""):
+                await self._chat_handler.add_message(chat_message(final_text, self._channel)) 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

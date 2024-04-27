@@ -28,15 +28,16 @@ class json_message_handler:
             else:
                 filtered_node_txt = node_filter.filter_message
 
-            # Our message has been filtered, now let's fill in the relevent data
-            if node['type'] == 'text':
-                pass # Do nothing, but leave this here just in case we wanna do stuff later I dunno
-            elif node['type'] == 'player_id':
-                filtered_node_txt = filtered_node_txt % self.parent_relay._get_playerAlias_by_id(int(node['text']))
-            elif node['type'] == 'item_id':
-                filtered_node_txt = filtered_node_txt % self.parent_relay._get_itemName_by_id(int(node['text']), int(node['player']))
-            elif node['type'] == 'location_id':
-                filtered_node_txt = filtered_node_txt % self.parent_relay._get_locationName_by_id(int(node['text']), int(node['player']))
+            if (filtered_node_txt != None and filtered_node_txt != ""):
+                # Our message has been filtered, now let's fill in the relevent data
+                if node['type'] == 'text':
+                    pass # Do nothing, but leave this here just in case we wanna do stuff later I dunno
+                elif node['type'] == 'player_id':
+                    filtered_node_txt = filtered_node_txt % self.parent_relay._get_playerAlias_by_id(int(node['text']))
+                elif node['type'] == 'item_id':
+                    filtered_node_txt = filtered_node_txt % self.parent_relay._get_itemName_by_id(int(node['text']), int(node['player']))
+                elif node['type'] == 'location_id':
+                    filtered_node_txt = filtered_node_txt % self.parent_relay._get_locationName_by_id(int(node['text']), int(node['player']))
 
             return filtered_node_txt
         else:
