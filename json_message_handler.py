@@ -52,7 +52,10 @@ class json_message_handler:
             for node in json:
                 node_text = self._filter_node(node)
                 if (node_text != None and node_text != ""):
-                    final_string += node_text % node['text']
+                    if ("%s" in node_text): # Fun fact I did not know, if you try to % format a string that doesn't contain a place for it, an exception is raised!
+                        final_string += node_text % node['text']
+                    else:
+                        final_string += node_text
                 else:
                     # _handle_node returned nothing, message should be ignored
                     return ""
