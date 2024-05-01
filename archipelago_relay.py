@@ -69,7 +69,8 @@ class archi_relay:
     _outgoing_data_loop: asyncio.Task = None
 
     _archi_slot_players = [] # Slot info from the players as the archipelago server states (not the site) (Do we even need to store this)
-    _archi_players = [] # Player info from Archipelago
+    _archi_players: list[NetworkPlayer] = [] # Player info from Archipelago
+    _archi_player_items: dict[int, list] = {} # Used to store information received from ReceivedItems (ID/int is slot number)
     _archi_slot_info = [] # Player slot info from Archi (I know I know; this is sent from the 'Connected' cmd)
     _room_info = {} # Raw packet from when _room_info['data'] would be 'RoomInfo'
 
@@ -242,6 +243,8 @@ class archi_relay:
                     logging.info("Requesting game data for:")
                     logging.info(requested_games)
                     self.append_payload(payload)
+                
+                # TODO: Get hints for each player? Or do we do this dynamically (as people request things)
 
                 # Now that we are fully connected, create our deathlink relays
                 for player in self._multiworld_site_data.players:
@@ -276,7 +279,16 @@ class archi_relay:
                 logging.error(e)
 
         elif (cmd == "Bounced"):
-            pass # Do Nothing (yet hehe)
+            pass
+
+        elif (cmd == "ReceivedItems"):
+            for item in data["items"]:
+                if (not int(item.player) in self._archi_player_items):
+                    self._archi_player_items[int(item.player)] = []
+                self._archi_player_items[int(item.player)].append(item)
+
+        elif (cmd == "RoomUpdate"):
+            pass #TODO
         
         else:
             logging.warn("Received unhandled cmd: %s" % cmd)
@@ -384,6 +396,7 @@ class archi_relay:
 
         self._archi_slot_players = []
         self._archi_players = []
+        self._archi_player_items = {}
         self._archi_slot_info = []
         self._password = password or ""
         self._room_info = {}
