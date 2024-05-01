@@ -112,8 +112,8 @@ class deathlink_relay(archi_relay):
             if ('data' in data and 'source' in data['data']):
                 await self._parent_relay.report_death(data)
 
-        else:
-            logging.warn("Received unhandled cmd: %s" % cmd)
+        #else:
+            #logging.warn("Received unhandled cmd: %s" % cmd)
 
     async def start(self):        
         if (self._multiworld_site_data == None):
