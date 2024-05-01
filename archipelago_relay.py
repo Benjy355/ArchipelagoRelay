@@ -342,10 +342,6 @@ class archi_relay:
             logging.info("Disconnected from game %s" % self._multiworld_site_data.game_id)
             await self.disconnect()
 
-    def _compare_deaths(self, death1, death2) -> bool:
-        # Returns True if they are the same.
-        pass
-
     async def report_death(self, bounce_packet: dict): # Used for deathlink_relays to send deaths
         #{'cmd': 'Bounced', 'tags': ['DeathLink'], 'data': {'time': 1712093523.7267756, 'source': 'Ben', 'cause': ''}}
         if (bounce_packet in self._previous_deaths):
