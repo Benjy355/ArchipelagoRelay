@@ -207,7 +207,7 @@ class archi_relay:
             if (item.item_id == item_id):
                 self._chat_handler.add_message("%s! %s has been found!" % (item.user_mention_str, item_name))
     
-    async def handle_print_json(self, json: dict): # This has not been re-written yet since v1...
+    async def handle_print_json(self, json: dict):
         try:
             if (self._json_handler == None):
                 self._json_handler = json_message_handler(self)
