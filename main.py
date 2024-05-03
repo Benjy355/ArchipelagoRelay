@@ -17,12 +17,11 @@ import game_cache
 
 # Perms int 377957207104
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
-#breakHere = None
 
 #logging.basicConfig(filename="fuckme.log", level=logging.DEBUG)
 logging.getLogger().setLevel(logging.INFO)
 
-tracked_games: dict[list[archi_relay]] = {} # {guild_id: [archi_relays]}
+tracked_games: dict[int, list[archi_relay]] = {} # {guild_id: [archi_relays]}
 
 intent = discord.Intents.default()
 intent.message_content = True
@@ -138,10 +137,56 @@ async def track_item(ctx: discord.Interaction, item_name: str):
 
     if (len(multiworld_games) > 0):
         the_view = track_item_view(_handle_track_item_view_callback, multiworld_games, item_name)
-        await ctx.response.send_message(content="Which multiworld game is this item in? Note: If you disconnect I will not remember what items you wanted tracked.", view=the_view, ephemeral=True)
+        await ctx.response.send_message(content="Which multiworld game is this item in? Note: If you disconnect I *will* remember what items you wanted tracked.", view=the_view, ephemeral=True)
     else:
         await ctx.response.send_message(content="Please connect to a multiworld server first", ephemeral=True)
     
+
+async def _send_hints(calling_view: disconnect_view, ctx: discord.Interaction, server_id: str = ""):
+    # So we're going to have to find a system for this command to send the "GET" command, AND get the response sent back over to it
+    if (calling_view == None and not server_id == ""):
+        game_data = None
+        # Don't check view results if we were just given a server ID
+        for multi_game in tracked_games[ctx.guild_id]:
+            if multi_game._multiworld_site_data.game_id == server_id:
+                game_data = multi_game
+                break
+        
+        hints_string = ""
+        if (game_data != None):
+            for k, hint_dict in game_data._archi_player_hints.items():
+                for hint in hint_dict:
+                    hints_string += "**%s** for **%s** is at *%s* in *%s*'s world [*%s*]\n" % (
+                        game_data._get_itemName_by_id(hint['item'], hint['receiving_player']),
+                        game_data._get_playerAlias_by_id(hint['receiving_player']),
+                        game_data._get_locationName_by_id(hint['location'], hint['finding_player']),
+                        game_data._get_playerAlias_by_id(hint['finding_player']),
+                        "*FOUND*" if hint['found'] == True else "Not Found"
+                    )
+            if (hints_string != ""):
+                await ctx.response.send_message(hints_string, ephemeral=True)
+            else:
+                await ctx.response.send_message("I have no hints found for your multiworld game :(", ephemeral=True)
+        else:
+            await ctx.response.send_message("Something went wrong, blame Ben!", ephemeral=True)
+            logging.error("Failed to find game_data for server id %s in _send_hints" % server_id)
+
+
+@cmd_tree.command(name="hints", description="List hints (and their status)")
+async def hints(ctx: discord.Interaction):
+    server_options = []
+    if (ctx.guild_id in tracked_games):
+        for game in tracked_games[ctx.guild_id]:
+            if game.connected:
+                server_options.append(game._multiworld_site_data.game_id)
+
+    if (len(server_options) < 1):
+        await ctx.response.send_message(content="Please connect to a multiworld game first!", ephemeral=True)
+    if (len(server_options) < 2):
+        # We only have one option, just use it.
+        await _send_hints(None, ctx, server_options[0])
+    else:
+        await ctx.response.send_message("Ben forgot to finish this part of the hints function", ephemeral=False) # Just in case
 
 @main_bot.event
 async def on_ready():

@@ -104,6 +104,8 @@ class archi_relay:
 
     _archi_slot_players = [] # Slot info from the players as the archipelago server states (not the site) (Do we even need to store this)
     _archi_players: list[NetworkPlayer] = [] # Player info from Archipelago
+    _archi_retrieved_name_map: dict[str, NetworkPlayer] = {} # Used by the Retreived command to simplify tying a player's game/name to a those goofy _read_hints_0_1 requests
+    _archi_player_hints: dict[int, dict] = {} # Key is slot id of *receiving* player. Stores results of _read_hints_0_0 packets as dict
     _archi_player_items: dict[int, list] = {} # Used to store information received from ReceivedItems (ID/int is slot number)
     _archi_slot_info = [] # Player slot info from Archi (I know I know; this is sent from the 'Connected' cmd)
     _room_info = {} # Raw packet from when _room_info['data'] would be 'RoomInfo'
@@ -235,7 +237,7 @@ class archi_relay:
             
             self._room_info = data
             phantom_player = self.phantom_player()
-            await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate %s playing %s." % (phantom_player.name, phantom_player.game), self._channel))
+            await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._channel))
             # Connect as a user now that we have RoomInfo
             payload = {
                 'cmd': 'Connect',
@@ -278,7 +280,19 @@ class archi_relay:
                     logging.info(requested_games)
                     self.append_payload(payload)
                 
-                # TODO: Get hints for each player? Or do we do this dynamically (as people request things)
+                # Get all of the hints, and let Archipelago know we want notified of hints
+                player_hint_request_strings = []
+                for player in self._archi_players:
+                    req_str = "_read_hints_%s_%s" % (player.team, player.slot)
+                    player_hint_request_strings.append(req_str)
+                    self._archi_retrieved_name_map[req_str] = player
+                    #TODO: YOU WERE HERE, DEBUG WHY THIS LINE IS THROWING AN EXCEPTION
+
+                payload = {
+                    'cmd': 'Get',
+                    'keys': player_hint_request_strings
+                }
+                self.append_payload(payload)
 
                 # Now that we are fully connected, create our deathlink relays
                 for player in self._multiworld_site_data.players:
@@ -323,9 +337,31 @@ class archi_relay:
 
         elif (cmd == "RoomUpdate"):
             pass #TODO
+
+        elif (cmd == "Retrieved"):
+            if (not "keys" in data):
+                logging.error("Bad 'Retrieved' result!")
+                logging.error(data)
+                return
+            
+            for k, key in data["keys"].items():
+                if k in self._archi_retrieved_name_map:
+                    for hint in key:
+                        if ("class" in hint and hint["class"] == "Hint"):
+                            if (hint["receiving_player"] not in self._archi_player_hints):
+                                self._archi_player_hints[hint["receiving_player"]] = []
+                            if (hint not in self._archi_player_hints[hint["receiving_player"]]): # Ignore duplicates, of course.
+                                self._archi_player_hints[hint["receiving_player"]].append(hint)
+                        else:
+                            logging.error("Expected 'Retrieved' cmd packet")
+                            logging.error(hint)
+                else:
+                    logging.error("Received 'Retrieved' cmd packet for user we don't track?")
+                    logging.error(key)
         
         else:
             logging.warn("Received unhandled cmd: %s" % cmd)
+            logging.warn(data)
 
     async def send_data_loop(self):
         while self._continue:
@@ -430,6 +466,8 @@ class archi_relay:
 
         self._archi_slot_players = []
         self._archi_players = []
+        self._archi_retrieved_name_map = {}
+        self._archi_player_hints = {}
         self._archi_player_items = {}
         self._archi_slot_info = []
         self._password = password or ""
