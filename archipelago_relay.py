@@ -281,7 +281,7 @@ class archi_relay:
                     self.append_payload(payload)
                 
                 # Get all of the hints, and let Archipelago know we want notified of hints
-                player_hint_request_strings = []
+                """player_hint_request_strings = []
                 for player in self._archi_players:
                     req_str = "_read_hints_%s_%s" % (player.team, player.slot)
                     player_hint_request_strings.append(req_str)
@@ -292,8 +292,8 @@ class archi_relay:
                     'cmd': 'Get',
                     'keys': player_hint_request_strings
                 }
-                self.append_payload(payload)
-
+                self.append_payload(payload)"""
+                
                 # Now that we are fully connected, create our deathlink relays
                 for player in self._multiworld_site_data.players:
                     logging.debug("[handle_response]Creating deathlink relay for user in slot %s (%s)" % (player.id, player.name))
