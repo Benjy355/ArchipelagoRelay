@@ -172,7 +172,7 @@ async def _send_hints(calling_view: disconnect_view, ctx: discord.Interaction, s
             logging.error("Failed to find game_data for server id %s in _send_hints" % server_id)
 
 
-@cmd_tree.command(name="hints", description="List hints (and their status)")
+"""@cmd_tree.command(name="hints", description="List hints (and their status)")
 async def hints(ctx: discord.Interaction):
     server_options = []
     if (ctx.guild_id in tracked_games):
@@ -187,7 +187,7 @@ async def hints(ctx: discord.Interaction):
         await _send_hints(None, ctx, server_options[0])
     else:
         await ctx.response.send_message("Ben forgot to finish this part of the hints function", ephemeral=False) # Just in case
-
+"""
 @main_bot.event
 async def on_ready():
     await cmd_tree.sync()
