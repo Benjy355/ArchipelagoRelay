@@ -242,7 +242,7 @@ class archi_relay:
             payload = {
                 'cmd': 'Connect',
                 'password': self._password, 'name': phantom_player.name, 'version': version_tuple,
-                'tags': ['TextOnly', 'AP', 'DeathLink'], 'items_handling': 0b111,
+                'tags': ['TextOnly', 'AP'], 'items_handling': 0b111,
                 'uuid': 696942024, 'game': phantom_player.game, "slot_data":False
             }
             self.append_payload(payload)
@@ -367,10 +367,11 @@ class archi_relay:
         while self._continue:
             try:
                 if (len(self._pending_payloads) > 0):
+                    payload = self._pending_payloads.pop(0)
                     logging.debug("\nSENDING:")
-                    logging.debug(self._pending_payloads)
-                    await self._socket.send(self._pending_payloads)
-                    self._pending_payloads = []
+                    logging.debug(payload)
+                    await self._socket.send(payload)
+                    #self._pending_payloads = []
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
