@@ -28,14 +28,19 @@ class archipelago_site_slot_data:
         id = columns[0].text
         name = columns[1].find("a").text
         game = columns[2].text
-        try:
-            download_link = columns[3].find("a").attrs['href']
-        except:
+
+        dl_a = columns[3].find("a")
+        if (dl_a != None):
+            download_link = dl_a.attrs['href']
+        else:
             download_link = None
-        try:
-            tracker_page = columns[4].find("a").attrs['href']
-        except:
+        
+        tp_a = columns[4].find("a")
+        if (tp_a != None):
+            tracker_page = tp_a.attrs['href']
+        else:
             tracker_page = None
+
         return cls(id=id, name=name, game=game, download_link=download_link, tracker_page=tracker_page)
         
 
