@@ -156,6 +156,12 @@ class archi_relay:
             if player.slot == id:
                 return player.name
         return "Undefined"
+    
+    def _get_playerData_by_id(self, id: int) -> NetworkPlayer:
+        for player in self._archi_players:
+            if player.slot == id:
+                return player
+        return None
             
     def _get_playerAlias_by_id(self, id: int) -> str:
         for player in self._archi_players:
@@ -174,7 +180,8 @@ class archi_relay:
     def _get_itemName_by_id(self, id: int, playerId: int) -> str:
         try:
             game = self._get_playerGame_by_id(playerId)
-            item_name = game_cache.get_game_cache(game)['item_id_to_name'][int(id)]
+            cache = game_cache.get_game_cache(game)['item_id_to_name']
+            item_name = cache[int(id)]
         except Exception as e:
             logging.error("Failed to get item name from ID for item %i" % id)
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -248,10 +255,12 @@ class archi_relay:
             self.append_payload(payload)
 
         elif (cmd == "PrintJSON"):
-            await self.handle_print_json(data['data'])
+            #print(data)
+            await self.handle_print_json(data)
         
         elif (cmd == "Connected"):
             try:
+                self._archi_players = []
                 for p in data["players"]:
                     self._archi_players.append(p)
                 for k, s in data["slot_info"].items():
@@ -434,6 +443,10 @@ class archi_relay:
         global insults
         random_insult = insults[random.randint(0, len(insults)-1)]
         await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (bounce_packet['data']['source'], random_insult), self._channel))
+
+    async def forward_message(self, data: dict):
+        # deathlink_relays will push messages it wants over to our parent
+        await self.handle_print_json(data)
 
     def connected(self) -> bool:
         # Returns status of connection

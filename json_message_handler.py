@@ -2,28 +2,31 @@ from archipelago_relay import archi_relay
 import logging
 import sys
 import os
+from JSONNodeFilter import JSONNodeFilter
 from JSONMessageFilter import JSONMessageFilter
 import JSONFilters
 
 class json_message_handler:
     parent_relay: archi_relay = None
-    filters: dict[str, JSONMessageFilter] = {}
+    node_filters: dict[str, JSONNodeFilter] = {}
+    message_filters: dict[str, JSONMessageFilter] = {}
 
-    def __init__(self, parent_relay: archi_relay, filters: dict[str, JSONMessageFilter] = JSONFilters.DefaultFilters):
+    def __init__(self, parent_relay: archi_relay, node_filters: dict[str, JSONNodeFilter] = JSONFilters.DefaultNodeFilters, message_filters: dict[str, JSONMessageFilter] = JSONFilters.DefaultMessageFilters):      
         self.parent_relay = parent_relay
-        self.filters = filters
+        self.node_filters = node_filters
+        self.message_filters = message_filters
 
     def _filter_node(self, node: dict) -> str:
         # Determines if we are modifying the node text, returns the new node 'text'
         # Returns "" if filters determine message should be ignored
-        if not "type" in node:
+        if (not "type" in node):
             node['type'] = "text" # So we can filter for generic text, we will force a type to exist.
                 
-        if node['type'] in self.filters:
+        if (node['type'] in self.node_filters):
             # Is there a check function? If not, just use it's filter
-            node_filter = self.filters[node['type']]
+            node_filter = self.node_filters[node['type']]
             filtered_node_txt = ""
-            if node_filter.check_func != None:
+            if (node_filter.check_func != None):
                 filtered_node_txt = node_filter.check_func(node)
             else:
                 filtered_node_txt = node_filter.filter_message
@@ -44,24 +47,29 @@ class json_message_handler:
             logging.warn("Node type '%s' not present in filters for message:" % node['type'])
             logging.warn(node)
             return node['text']
+        
+    def _filter_message(self, data: dict) -> str:
+        final_message = ""
+        if ("type" not in data):
+            logging.warning("No type field for PrintJSON cmd!")
+            logging.warning(data)
+            data['type'] = "generic"
+        
+        if (data['type'] in self.message_filters):
+            #check_func(node: dict, relay: archi_relay, parent_json_handler: json_message_handler) -> str
+            final_message += self.message_filters[data['type']].filter_func(data=data, relay=self.parent_relay, parent_json_handler=self)
+        else:
+            logging.info("No handler for message type %s. Using generic." % data['type'])
+            final_message += JSONFilters._default_generic_message_func(data=data, relay=self.parent_relay, parent_json_handler=self)
+        
+        return final_message
+
 
     def convert_json_msg(self, json: dict) -> str:
         # Converts the usual PRINTJSON command over to a regular string, after passing it through filters.
         # CAN RETURN EMPTY STRING!
         try:
-            final_string = ""
-            for node in json:
-                node_text = self._filter_node(node)
-                if (node_text != None and node_text != ""):
-                    if ("%s" in node_text): # Fun fact I did not know, if you try to % format a string that doesn't contain a place for it, an exception is raised!
-                        final_string += node_text % node['text']
-                    else:
-                        final_string += node_text
-                else:
-                    # _handle_node returned nothing, message should be ignored
-                    return ""
-            
-            return final_string
+            return self._filter_message(json)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
