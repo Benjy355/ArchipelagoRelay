@@ -58,54 +58,16 @@ class deathlink_relay(archi_relay):
             self.append_payload(payload)
 
         elif (cmd == "PrintJSON"):
-            pass # Do not print JSON.
+            if (data['type'] == 'Hint'):
+                # We only care if it's for us
+                if (data['receiving'] == self.slot_id):
+                    await self._parent_relay.forward_message(data)
         
         elif (cmd == "Connected"):
-            try:
-                for p in data["players"]:
-                    self._archi_players.append(p)
-                for k, s in data["slot_info"].items():
-                    self._archi_slot_info.append(s)
-                #Get our cache together.
-                """No need for game data in a cache, no?
-                games = []
-                for slot in self._archi_slot_info:
-                    if (not slot.game in games):
-                        games.append(slot.game)
-                
-                # Rip out any games where we trust our cache
-                for game in games:
-                    if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
-                        games.remove(game)
-                if (len(games) > 0):
-                    payload = {
-                        'cmd': 'GetDataPackage',
-                        'games': games
-                    }
-                    logging.debug("Requesting game data for:")
-                    logging.debug(games)
-                    self.append_payload(payload)"""
-            except Exception as e:
-                logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[handle_response]")
-                logging.error([exc_type, fname, exc_tb.tb_lineno])
-                logging.error(e)
+            pass
 
         elif (cmd == "DataPackage"):
-            try:
-                if ("games" in data['data']):
-                    for single_game_name in data['data']['games']:
-                        logging.debug("Receiving DataPackage for %s" % single_game_name)
-                        game_cache.update_game_cache(single_game_name, data['data']['games'][single_game_name])
-            except Exception as e:
-                logging.error("[handle_response]Failed to parse DataPackage!")
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[handle_response]")
-                logging.error([exc_type, fname, exc_tb.tb_lineno])
-                logging.error(e)
+            pass
 
         elif (cmd == "Bounced"):
             #{'cmd': 'Bounced', 'tags': ['DeathLink'], 'data': {'time': 1712093523.7267756, 'source': 'Ben', 'cause': ''}}
