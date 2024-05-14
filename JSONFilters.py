@@ -65,5 +65,6 @@ DefaultMessageFilters = {
     'generic': JSONMessageFilter("generic", filter_func=_default_generic_message_func),
     'Join': JSONMessageFilter("Join", filter_func=_default_join_message_func),
     'Hint': JSONMessageFilter("Hint", filter_func=_default_hint_message_func),
-    'Tutorial': JSONMessageFilter("Tutorial", filter_func=_do_nothing)
+    'Tutorial': JSONMessageFilter("Tutorial", filter_func=_do_nothing),
+    'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing)
 }

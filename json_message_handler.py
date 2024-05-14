@@ -27,7 +27,7 @@ class json_message_handler:
             node_filter = self.node_filters[node['type']]
             filtered_node_txt = ""
             if (node_filter.check_func != None):
-                filtered_node_txt = node_filter.check_func(node)
+                filtered_node_txt = node_filter.check_func(node, self)
             else:
                 filtered_node_txt = node_filter.filter_message
 
