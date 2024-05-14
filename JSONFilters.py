@@ -51,6 +51,10 @@ def _default_join_message_func(data: dict, relay: archi_relay, parent_json_handl
     player_info = relay._get_playerData_by_id(data['slot'])
     return "*%s* has joined playing *%s*." % (player_info.name, relay._get_playerGame_by_id(data['slot']))
 
+def _default_part_message_func(data: dict, relay: archi_relay, parent_json_handler) -> str:
+    player_info = relay._get_playerData_by_id(data['slot'])
+    return "*%s* has disconnected." % (player_info.name, relay._get_playerGame_by_id(data['slot']))
+
 ## Default groups
 
 DefaultNodeFilters = {
@@ -66,5 +70,7 @@ DefaultMessageFilters = {
     'Join': JSONMessageFilter("Join", filter_func=_default_join_message_func),
     'Hint': JSONMessageFilter("Hint", filter_func=_default_hint_message_func),
     'Tutorial': JSONMessageFilter("Tutorial", filter_func=_do_nothing),
+    'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing),
+    'Part': JSONMessageFilter("Part", filter_func=_default_part_message_func),
     'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing)
 }
