@@ -295,7 +295,6 @@ class archi_relay:
                     req_str = "_read_hints_%s_%s" % (player.team, player.slot)
                     player_hint_request_strings.append(req_str)
                     self._archi_retrieved_name_map[req_str] = player
-                    #TODO: YOU WERE HERE, DEBUG WHY THIS LINE IS THROWING AN EXCEPTION
 
                 payload = {
                     'cmd': 'Get',
