@@ -471,11 +471,12 @@ class archi_relay:
         await self._socket.close()
         self._socket = None
 
-    def __init__(self, bot_client: discord.Client, response_channel: discord.channel.TextChannel, multiworld_link: str, chat_handler_obj: chat_handler, password: str):
+    def __init__(self, bot_client: discord.Client, response_channel: discord.channel.TextChannel, multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
         self._bot = bot_client
         self._channel = response_channel
         self._thread = None
         self._multiworld_link = multiworld_link
+        self._multiworld_site_data = site_data
         self._continue = True
         
         self._deathlink_relays = []
