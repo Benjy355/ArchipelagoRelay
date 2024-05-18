@@ -8,7 +8,7 @@ import os
 import game_cache
 import random
 import copy
-
+from typing import Union
 from archipelago_site_scraping import *
 
 from chat_handler import chat_handler, chat_message
@@ -84,8 +84,8 @@ class TrackedItem(): #Glorified dict
 
 class archi_relay:
     _bot: discord.Client = None # Discord client
-    _channel: discord.TextChannel = None # Channel where messages are relayed to
-    _thread: discord.Thread = None # Thread where messages are relayed to (overrides _channel) *NOT YET IMPLEMENTED*
+    _game_name: str = "" # Auto generated name of the game using 4 words.
+    _message_destination: Union[discord.TextChannel, discord.Thread] = None # Channel where messages are relayed to
     _multiworld_link: str = None # Example: https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA
     _multiworld_site_data: archipelago_site_data = None
     _chat_handler: chat_handler = None
@@ -129,11 +129,11 @@ class archi_relay:
         for item in self._items_to_track:
             final_str += item.as_string() + "\n"
         
-        Config.set("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, final_str, self._channel.guild)
+        Config.set("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, final_str, self._message_destination.guild)
 
     # Loads tracked items into ... itself.
     def load_tracked_items(self) -> None:
-        serialized = Config.get("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, self._channel.guild, "")
+        serialized = Config.get("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, self._message_destination.guild, "")
         main_split = serialized.split()
         for item in main_split:
             try:
@@ -223,7 +223,7 @@ class archi_relay:
             
             final_text = self._json_handler.convert_json_msg(json)
             if (final_text != None and final_text != ""):
-                await self._chat_handler.add_message(chat_message(final_text, self._channel)) 
+                await self._chat_handler.add_message(chat_message(final_text, self._message_destination)) 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -244,7 +244,7 @@ class archi_relay:
             
             self._room_info = data
             phantom_player = self.phantom_player()
-            await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._channel))
+            await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._message_destination))
             # Connect as a user now that we have RoomInfo
             payload = {
                 'cmd': 'Connect',
@@ -397,7 +397,7 @@ class archi_relay:
                         logging.debug("\nRECEIVE:" + str(response))
                         await self.handle_response(response)
             except websockets.exceptions.ConnectionClosedError as e:
-                await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._channel))
+                await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
                 logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
                 self._continue = False
                 await self.disconnect()
@@ -411,8 +411,11 @@ class archi_relay:
 
     def start(self):
         try:
-            logging.debug("Getting site data for game from %s" % self._multiworld_link)
-            self._multiworld_site_data = get_site_data(self._multiworld_link)
+            if (self._multiworld_site_data == None):
+                logging.debug("Getting site data for game from %s" % self._multiworld_link)
+                self._multiworld_site_data = get_site_data(self._multiworld_link)
+            else:
+                logging.debug("Site data passed to me, not grabbing new information.")
         except:
             raise FailedToStart(reason="Failed to get multiworld site data!")
         
@@ -428,7 +431,7 @@ class archi_relay:
             self._incoming_data_loop = asyncio.create_task(coro=self.receive_data_loop(), name="INC_%s" % self._multiworld_site_data.game_id)
             self._outgoing_data_loop = asyncio.create_task(coro=self.send_data_loop(), name="OUT_%s" % self._multiworld_site_data.game_id)
         except ConnectionRefusedError:
-            await self._chat_handler.add_message(chat_message("Failed to connect to game *%s*! Connection refused." % self._multiworld_site_data.game_id, self._channel))
+            await self._chat_handler.add_message(chat_message("Failed to connect to game *%s*! Connection refused." % self._multiworld_site_data.game_id, self._message_destination))
         except websockets.ConnectionClosed:
             logging.info("Disconnected from game %s" % self._multiworld_site_data.game_id)
             await self.disconnect()
@@ -441,7 +444,7 @@ class archi_relay:
         self._previous_deaths.append(bounce_packet)
         global insults
         random_insult = insults[random.randint(0, len(insults)-1)]
-        await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (bounce_packet['data']['source'], random_insult), self._channel))
+        await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (bounce_packet['data']['source'], random_insult), self._message_destination))
 
     async def forward_message(self, data: dict):
         # deathlink_relays will push messages it wants over to our parent
@@ -471,10 +474,12 @@ class archi_relay:
         await self._socket.close()
         self._socket = None
 
-    def __init__(self, bot_client: discord.Client, response_channel: discord.channel.TextChannel, multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
+    def __init__(self, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
         self._bot = bot_client
-        self._channel = response_channel
+        self._game_name = game_name
+        self._message_destination = response_destination
         self._thread = None
+        self._socket = None
         self._multiworld_link = multiworld_link
         self._multiworld_site_data = site_data
         self._continue = True
@@ -493,6 +498,7 @@ class archi_relay:
         self._pending_payloads = []
 
         self._previous_deaths = []
+
 
 
 from deathlink_relay import deathlink_relay

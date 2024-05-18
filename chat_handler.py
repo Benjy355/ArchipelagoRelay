@@ -10,13 +10,14 @@ logger = logging.getLogger(__name__)
 
 import os
 import sys
+from typing import Union
 
 class chat_message:
     #Simple container for message relay messages
     message: str = None
-    channel: discord.TextChannel = None
+    channel: Union[discord.TextChannel, discord.Thread] = None
     
-    def __init__(self, message: str, channel: discord.TextChannel):
+    def __init__(self, message: str, channel: Union[discord.TextChannel, discord.Thread]):
         self.message = message
         self.channel = channel
 
