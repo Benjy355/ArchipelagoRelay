@@ -12,15 +12,12 @@ class deathlink_relay(archi_relay):
 
     def phantom_player(self) -> archipelago_site_slot_data:
         return self._multiworld_site_data.players[self.slot_id - 1] # Slot data from the website starts at 1 instead of 0, adjust!
-    #def __init__(self, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
     def __init__(self, parent_client: archi_relay, slot_id: int):
         self.slot_id = slot_id
         self._parent_relay = parent_client
-        # I don't think this is... the best way to go.
+        # I don't think this is... the best way to go. But eh
         super().__init__(bot_client=parent_client._bot, game_name=parent_client._game_name, response_destination=parent_client._message_destination, multiworld_link = parent_client._multiworld_link, site_data = parent_client._multiworld_site_data, chat_handler_obj=parent_client._chat_handler, password=parent_client._password )
         
-
-
     async def handle_response(self, data: dict):
         try:
             cmd = data['cmd']

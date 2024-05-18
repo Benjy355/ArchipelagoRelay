@@ -34,6 +34,7 @@ main_chat_handler = chat_handler(main_bot)
 
 cmd_tree = app_commands.CommandTree(main_bot)
 
+# Handles connecting to a game and spinning up a new relay.
 async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: bool = False):
     game_info = get_site_data(multiworld_link)
     planned_response = "You shouldn't be seeing this message, Ben fucked up."
@@ -92,7 +93,7 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
     # We've made it this far, our thread/game should be real, let's save the name
     Config.set("GAMENAME_%s" % game_info.game_id, game_name, ctx.guild)
     if (type(relay_chat_destination) is discord.Thread):
-        Config.set("GAMETHREAD_%s", relay_chat_destination.id)
+        Config.set("GAMETHREAD_%s" % game_info.game_id, relay_chat_destination.id, ctx.guild)
 
     # this is kind of really ugly
     new_session = force_disconnect_session(
@@ -134,30 +135,47 @@ async def finish_connection(ctx: discord.Interaction, session: force_disconnect_
 
     new_relay.start()
 
+    Config.set("last_archi_connection_link_%s" % ctx.channel_id, session.multiworld_link, ctx.guild)
+    Config.set("last_archi_connection_password_%s" % ctx.channel_id, session.password, ctx.guild)
+
 
 @cmd_tree.command(name="connect", description="Starts monitoring/relaying messages (to this channel) from said game")
 @app_commands.describe(multiworld_link="Example: https://archipelago.gg/room/4_hWRGK1RPi...")
-@app_commands.describe(password="Password to connect to the multiworld game")
-@app_commands.describe(create_thread="(t or f) Will create a thread in the text channel.")
+@app_commands.describe(password="[Optional]Password to connect to the multiworld game")
+@app_commands.describe(create_thread="[Optional](t or f) Will create a thread in the text channel.")
 async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "f"):
     if (create_thread.lower() == "true" or create_thread.lower() == "t"):
         create_thread = True
     else:
         create_thread = False
-    #TODO: CHECK IF WE HAVE PERMISSIONS IN THAT CHANNEL BEFORE STARTING
+
     await do_connect(ctx, multiworld_link, password, create_thread)
 
-@cmd_tree.command(name="reconnect", description="Reconnects to the last Multiworld server")
+@cmd_tree.command(name="reconnect", description="Reconnects to the last Multiworld server in this channel/thread")
 @app_commands.describe(create_thread="*Not yet implemented*; will create a thread in the text channel.")
 async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
-    prev_link = Config.get("last_archi_connection_link", ctx.guild)
+    prev_link = Config.get("last_archi_connection_link_%s" % ctx.channel_id, ctx.guild)
     if (prev_link):
-        await do_connect(ctx, prev_link, Config.get("last_archi_connection_password", ctx.guild), create_thread)
+        await do_connect(ctx, prev_link, Config.get("last_archi_connection_password_%s" % ctx.channel_id, ctx.guild), create_thread)
     else:
-        await ctx.response.send_message("I don't see a previous Multiworld game to connect to.", ephemeral=True)
+        await ctx.response.send_message("I don't see a previous Multiworld game in this chat to connect to. (Try again in a specific channel or thread!)", ephemeral=True)
 
+@cmd_tree.command(name="disconnect", description="Disconnect from the game active in this chat")
+async def disconnect(ctx: discord.Interaction):
+    # See if we're in a game here
+    found_game = None
+    if (ctx.guild.id in active_relays.keys()):
+        for thread_id in active_relays[ctx.guild.id].keys():
+            if (active_relays[ctx.guild.id][thread_id].connected()):
+                found_game = active_relays[ctx.guild.id][thread_id]
+                break
+    if (found_game == None):
+        await ctx.response.send_message("No active relay found in this channel/thread.", ephemeral=True)
+        return
+    
+    await found_game.disconnect()
+    await ctx.response.send_message("Disconnected from \"%s\"" % found_game._game_name, ephemeral=False)
 
-# START HERE, CONNECTING WORKS, NOW FOR THE REST
 
 """
 async def _disconnect_from_game(calling_view: disconnect_view, ctx: discord.Interaction):

@@ -463,15 +463,15 @@ class archi_relay:
                 pass
 
         self._deathlink_relays = []
-        try:
+        await self._socket.close()
+        """try:
             self._incoming_data_loop.cancel()
         except:
             pass
         try:
             self._outgoing_data_loop.cancel()
         except:
-            pass
-        await self._socket.close()
+            pass"""
         self._socket = None
 
     def __init__(self, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
