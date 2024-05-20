@@ -62,14 +62,17 @@ def get_site_data(url: str) -> archipelago_site_data:
 
     main_bs = BeautifulSoup(page_request.content, "html.parser")
 
+    try:
     #Get the game ID from the <title> field
-    return_data.game_id = main_bs.find("title").text[11:] # Cut out "multiworld " from the title
-    
-    #Get the port, luckily (so far) there is only one span! Huzzah!
-    # We will grab the "data-tooltip" arg and take the final 6 characters, then cut off the last one (port is *58967*.)
-    return_data.port = main_bs.find("span").attrs['data-tooltip'][-6:-1]
+        return_data.game_id = main_bs.find("title").text[11:] # Cut out "multiworld " from the title
+        
+        #Get the port, luckily (so far) there is only one span! Huzzah!
+        # We will grab the "data-tooltip" arg and take the final 6 characters, then cut off the last one (port is *58967*.)
+        return_data.port = main_bs.find("span").attrs['data-tooltip'][-6:-1]
 
-    all_tables = main_bs.find_all("table")
+        all_tables = main_bs.find_all("table")
+    except:
+        return None
     # There should only be one table, where we have all the player info we want
     if (len(all_tables) > 0):
         try:
