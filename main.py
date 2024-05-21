@@ -140,8 +140,8 @@ async def finish_connection(ctx: discord.Interaction, session: force_disconnect_
 
     new_relay.start()
 
-    Config.set("last_archi_connection_link_%s" % ctx.channel_id, session.multiworld_link, ctx.guild)
-    Config.set("last_archi_connection_password_%s" % ctx.channel_id, session.password, ctx.guild)
+    Config.set("last_archi_connection_link_%s" % session.relay_chat_destination.id, session.multiworld_link, ctx.guild)
+    Config.set("last_archi_connection_password_%s" % session.relay_chat_destination.id, session.password, ctx.guild)
 
 
 @cmd_tree.command(name="connect", description="Starts monitoring/relaying messages (to this channel) from said game")
