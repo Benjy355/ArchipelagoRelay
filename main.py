@@ -35,7 +35,12 @@ main_chat_handler = chat_handler(main_bot)
 cmd_tree = app_commands.CommandTree(main_bot)
 
 # Handles connecting to a game and spinning up a new relay.
-async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: bool = False):
+async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = 'false'):
+    if (create_thread.lower() == "true" or create_thread.lower() == "t"):
+        create_thread = True
+    else:
+        create_thread = False
+
     game_info = get_site_data(multiworld_link)
     planned_response = "You shouldn't be seeing this message, Ben fucked up."
     if (game_info == None):
@@ -70,7 +75,7 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
             for thread in ctx.channel.threads:
                 if thread.name == game_name:
                     relay_chat_destination = thread
-                    break
+                    break # No need to make a thread, we've got one.
             if (relay_chat_destination == None):
                 try:
                     relay_chat_destination = await ctx.channel.create_thread(name=game_name, type=discord.ChannelType.public_thread)
@@ -144,11 +149,6 @@ async def finish_connection(ctx: discord.Interaction, session: force_disconnect_
 @app_commands.describe(password="[Optional]Password to connect to the multiworld game")
 @app_commands.describe(create_thread="[Optional](t or f) Will create a thread in the text channel.")
 async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "f"):
-    if (create_thread.lower() == "true" or create_thread.lower() == "t"):
-        create_thread = True
-    else:
-        create_thread = False
-
     await do_connect(ctx, multiworld_link, password, create_thread)
 
 @cmd_tree.command(name="reconnect", description="Reconnects to the last Multiworld server in this channel/thread")
