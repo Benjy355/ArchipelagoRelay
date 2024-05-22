@@ -390,6 +390,11 @@ class archi_relay:
     
     async def receive_data_loop(self):
         while self._continue:
+            if (self._socket == None):
+                await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
+                await self.disconnect()
+                self._continue = False
+                return
             try:
                 async for data in self._socket:
                     decoded = decode(data)
@@ -399,8 +404,8 @@ class archi_relay:
             except websockets.exceptions.ConnectionClosedError as e:
                 await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
                 logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
-                self._continue = False
                 await self.disconnect()
+                self._continue = False
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]

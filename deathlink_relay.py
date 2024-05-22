@@ -76,13 +76,15 @@ class deathlink_relay(archi_relay):
                         logging.debug("\nRECEIVE:" + str(response))
                         await self.handle_response(response)
             except websockets.exceptions.ConnectionClosedError as e:
-                logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
+                logging.warn("[DEATHLINK]ConnectionClosedError")
                 self._continue = False
+                # Disconnect our parent too to force everything.
                 await self.disconnect()
+                await self._parent_relay.disconnect()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[RECEIVE_DATA_LOOP]")
+                logging.error("[DEATHLINK]")
                 logging.error([exc_type, fname, exc_tb.tb_lineno])
                 logging.error(e)
             await asyncio.sleep(0.1)
