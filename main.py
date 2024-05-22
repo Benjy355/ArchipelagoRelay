@@ -67,7 +67,15 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
 
     # If we have a thread ID saved, try to use it automatically; if that fails, defer to previous settings
     if (game_thread_id != None):
-        relay_chat_destination = ctx.channel.get_thread(game_thread_id)
+        # Are we already in that thread?
+        if (type(ctx.channel) == discord.Thread):
+            if (ctx.channel.id == game_thread_id):
+                relay_chat_destination = ctx.channel
+            else:
+                ctx.response.send_message("[Exception]Somehow this thread's ID (%i) is not the ID I expected (%i). Contact Ben, he broke this real bad" % (ctx.channel.id, game_thread_id), ephemeral=True)
+                return
+        else:
+            relay_chat_destination = ctx.channel.get_thread(game_thread_id)
 
     if (relay_chat_destination == None):
     # Are we making a thread? If so, check and see if we have a non-archived thread for this game already, and we if we can make a thread
