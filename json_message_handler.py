@@ -2,8 +2,8 @@ from archipelago_relay import archi_relay
 import logging
 import sys
 import os
-from JSONNodeFilter import JSONNodeFilter
-from JSONMessageFilter import JSONMessageFilter
+from include.JSONNodeFilter import JSONNodeFilter
+from include.JSONMessageFilter import JSONMessageFilter
 import JSONFilters
 
 class json_message_handler:
