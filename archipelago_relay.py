@@ -41,7 +41,7 @@ class archi_relay:
     _bot: discord.Client = None # Discord client
     _game_name: str = "" # Auto generated name of the game using 4 words.
     _message_destination: Union[discord.TextChannel, discord.Thread] = None # Channel where messages are relayed to
-    _multiworld_link: str = None # Example: https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA
+    _multiworld_link: str = None # Example: https://archipelago.gg/room/4_hWRGK1RPiG3wYFQT...
     _multiworld_site_data: archipelago_site_data = None
     _chat_handler: chat_handler = None
     _password = None
