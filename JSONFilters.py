@@ -72,5 +72,7 @@ DefaultMessageFilters = {
     'Tutorial': JSONMessageFilter("Tutorial", filter_func=_do_nothing),
     'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing),
     'Part': JSONMessageFilter("Part", filter_func=_default_part_message_func),
-    'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing)
+    'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing),
+    'ItemSend': JSONMessageFilter("ItemSend", filter_func=_default_generic_message_func),
+    'Chat': JSONMessageFilter("Chat", filter_func=_default_generic_message_func)
 }
