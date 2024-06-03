@@ -345,7 +345,7 @@ class archi_relay:
     
     async def receive_data_loop(self):
         while self._continue:
-            if (self._socket == None):
+            if (self._socket == None or self._socket.closed):
                 await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
                 await self.disconnect()
                 return
