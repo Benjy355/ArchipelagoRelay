@@ -421,7 +421,10 @@ class archi_relay:
                 pass
 
         self._deathlink_relays = []
-        await self._socket.close()
+        try:
+            await self._socket.close() # Sometimes this is None by the time we get here, do not care about actually handling the exception
+        except:
+            pass
         """try:
             self._incoming_data_loop.cancel()
         except:
