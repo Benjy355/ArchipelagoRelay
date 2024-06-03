@@ -1,7 +1,7 @@
-from JSONNodeFilter import JSONNodeFilter
-from JSONMessageFilter import JSONMessageFilter    
+from include.JSONNodeFilter import JSONNodeFilter
+from include.JSONMessageFilter import JSONMessageFilter    
 from archipelago_relay import archi_relay
-from archipelago_common import NetworkItem
+from include.archipelago_common import NetworkItem
 #from json_message_handler import json_message_handler
 
 ## NODE FILTER FUNCTIONS
