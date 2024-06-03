@@ -124,7 +124,6 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
                 await ctx.response.send_message("To continue tracking %s, disconnect %s. (Or do nothing to cancel)" % (game_name, active_relays[ctx.guild.id][thread_id]._game_name), view=disc_view, ephemeral=True)
                 return
         
-    await asyncio.sleep(1) # Sleep for 1 second. In case Archi instance is just booting up from us loading the page earlier
     await finish_connection(ctx, new_session)
 
 async def finish_connection(ctx: discord.Interaction, session: force_disconnect_session):
