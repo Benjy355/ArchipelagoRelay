@@ -1,19 +1,19 @@
-import Config
+import include.Config as Config
 import discord
 from archipelago_relay import archi_relay, FailedToStart
 from archipelago_site_scraping import *
-from discord_oauth import DISCORD_TOKEN
+from include.discord_oauth import DISCORD_TOKEN
 from discord import app_commands
 import asyncio
 import logging
 from chat_handler import chat_handler
 
-from view_confirm_force_disconnect import *
+from views.view_confirm_force_disconnect import *
 
 from archipelago_relay import TrackedItem # TODO: LOL deal with this disaster
 from typing import Union
 
-from game_namer import name_game
+from include.game_namer import name_game
 import copy
 
 # Perms int 377957207104
