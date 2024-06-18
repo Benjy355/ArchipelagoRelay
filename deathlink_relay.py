@@ -12,6 +12,7 @@ class deathlink_relay(archi_relay):
 
     def phantom_player(self) -> archipelago_site_slot_data:
         return self._multiworld_site_data.players[self.slot_id - 1] # Slot data from the website starts at 1 instead of 0, adjust!
+    
     def __init__(self, parent_client: archi_relay, slot_id: int):
         self.slot_id = slot_id
         self._parent_relay = parent_client
