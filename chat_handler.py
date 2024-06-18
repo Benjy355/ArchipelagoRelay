@@ -10,13 +10,14 @@ logger = logging.getLogger(__name__)
 
 import os
 import sys
+from typing import Union
 
 class chat_message:
     #Simple container for message relay messages
     message: str = None
-    channel: discord.TextChannel = None
+    channel: Union[discord.TextChannel, discord.Thread] = None
     
-    def __init__(self, message: str, channel: discord.TextChannel):
+    def __init__(self, message: str, channel: Union[discord.TextChannel, discord.Thread]):
         self.message = message
         self.channel = channel
 
@@ -51,7 +52,13 @@ class chat_handler:
             try:
                 if (len(self._message_queue) > 0):
                     next_message: chat_message = self._message_queue.pop(0)
-                    await next_message.channel.send(next_message.message)
+                    try:
+                        await next_message.channel.send(next_message.message)
+                    except discord.errors.DiscordServerError as e:
+                        # Discord's fault! We'll just re-add the message to our array, and wait a bit
+                        self._message_queue.insert(0, next_message)
+                        logging.warning("Discord error! Waiting 5 seconds to retry.\n%s" % e.text)
+                        await asyncio.sleep(5)
                 await asyncio.sleep(self._NEXT_MESSAGE_DELAY)
             except discord.Forbidden:
                 logging.error("[chat_handler]Don't have permissions to send messages in channel '%s'." % next_message.channel.name)

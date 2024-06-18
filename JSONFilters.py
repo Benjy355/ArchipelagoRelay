@@ -1,7 +1,7 @@
-from JSONNodeFilter import JSONNodeFilter
-from JSONMessageFilter import JSONMessageFilter    
+from include.JSONNodeFilter import JSONNodeFilter
+from include.JSONMessageFilter import JSONMessageFilter    
 from archipelago_relay import archi_relay
-from archipelago_common import NetworkItem
+from include.archipelago_common import NetworkItem
 #from json_message_handler import json_message_handler
 
 ## NODE FILTER FUNCTIONS
@@ -72,5 +72,7 @@ DefaultMessageFilters = {
     'Tutorial': JSONMessageFilter("Tutorial", filter_func=_do_nothing),
     'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing),
     'Part': JSONMessageFilter("Part", filter_func=_default_part_message_func),
-    'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing)
+    'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing),
+    'ItemSend': JSONMessageFilter("ItemSend", filter_func=_default_generic_message_func),
+    'Chat': JSONMessageFilter("Chat", filter_func=_default_generic_message_func)
 }

@@ -1,3 +1,4 @@
+
 from archipelago_relay import *
 from archipelago_site_scraping import archipelago_site_slot_data
 import logging
@@ -11,29 +12,13 @@ class deathlink_relay(archi_relay):
 
     def phantom_player(self) -> archipelago_site_slot_data:
         return self._multiworld_site_data.players[self.slot_id - 1] # Slot data from the website starts at 1 instead of 0, adjust!
-
+    
     def __init__(self, parent_client: archi_relay, slot_id: int):
         self.slot_id = slot_id
         self._parent_relay = parent_client
-        self._multiworld_site_data = parent_client._multiworld_site_data
+        # I don't think this is... the best way to go. But eh
+        super().__init__(bot_client=parent_client._bot, game_name=parent_client._game_name, response_destination=parent_client._message_destination, multiworld_link = parent_client._multiworld_link, site_data = parent_client._multiworld_site_data, chat_handler_obj=parent_client._chat_handler, password=parent_client._password )
         
-        self._bot = parent_client._bot
-        self._channel = parent_client._channel
-        self._thread = None
-        self._multiworld_link = parent_client._multiworld_link
-        self._continue = True
-        
-        self._deathlink_relays = [] 
-        self._chat_handler = parent_client._chat_handler
-
-        self._archi_slot_players = parent_client._archi_slot_players
-        self._archi_players = parent_client._archi_players
-        self._archi_slot_info = parent_client._archi_slot_info
-        self._password = parent_client._password
-        self._room_info = parent_client._room_info
-        self._pending_payloads = []
-        self._previous_deaths = [] #Not used in Deathlink
-
     async def handle_response(self, data: dict):
         try:
             cmd = data['cmd']
@@ -92,13 +77,15 @@ class deathlink_relay(archi_relay):
                         logging.debug("\nRECEIVE:" + str(response))
                         await self.handle_response(response)
             except websockets.exceptions.ConnectionClosedError as e:
-                logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
+                logging.warn("[DEATHLINK]ConnectionClosedError")
                 self._continue = False
+                # Disconnect our parent too to force everything.
                 await self.disconnect()
+                await self._parent_relay.disconnect()
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[RECEIVE_DATA_LOOP]")
+                logging.error("[DEATHLINK]")
                 logging.error([exc_type, fname, exc_tb.tb_lineno])
                 logging.error(e)
             await asyncio.sleep(0.1)

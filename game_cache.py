@@ -4,7 +4,7 @@ import json
 import os
 import sys
 
-from archipelago_common import flip_dict, convert_keys_to_int
+from include.archipelago_common import flip_dict, convert_keys_to_int
 
 import logging
 logger = logging.getLogger(__name__)
