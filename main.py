@@ -35,7 +35,7 @@ main_chat_handler = chat_handler(main_bot)
 cmd_tree = app_commands.CommandTree(main_bot)
 
 # Handles connecting to a game and spinning up a new relay.
-async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = 'false'):
+async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = 't'):
     if (create_thread.lower() == "true" or create_thread.lower() == "t"):
         create_thread = True
     else:
@@ -117,11 +117,12 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
                     password=password,
                     game_info=game_info
                 )
+    # Check to be sure we aren't tracking a game in the destination thread only.
     if (ctx.guild.id in active_relays.keys()):
-        for thread_id in active_relays[ctx.guild.id].keys():
-            if (active_relays[ctx.guild.id][thread_id].connected()):
+        if (relay_chat_destination.id in active_relays[ctx.guild.id].keys() and 
+            active_relays[ctx.guild.id][relay_chat_destination.id].connected()):
                 disc_view = confirm_force_disconnect_view(callback_func=finish_connection, session=new_session)
-                await ctx.response.send_message("To continue tracking %s, disconnect %s. (Or do nothing to cancel)" % (game_name, active_relays[ctx.guild.id][thread_id]._game_name), view=disc_view, ephemeral=True)
+                await ctx.response.send_message("To continue tracking %s, disconnect %s. (Or do nothing to cancel)" % (game_name, active_relays[ctx.guild.id][relay_chat_destination.id]._game_name), view=disc_view, ephemeral=True)
                 return
         
     await finish_connection(ctx, new_session)
