@@ -7,7 +7,6 @@ import random
 
 class deathlink_relay(archi_relay):
     #Override archi-relay to only care about deathlink messages.
-    slot_id = None # Slot ID to login as for our ghost user
     _parent_relay: archi_relay = None
 
     def phantom_player(self) -> archipelago_site_slot_data:

@@ -45,6 +45,7 @@ class archi_relay:
     _multiworld_site_data: archipelago_site_data = None
     _chat_handler: chat_handler = None
     _password = None
+    _slot_id = None
 
     _deathlink_relays = None # List of relays that are also connected (as other players), but we only care about deathlink messages from them
     
@@ -435,8 +436,9 @@ class archi_relay:
             pass"""
         self._socket = None
 
-    def __init__(self, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
+    def __init__(self, slot_id: int, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
         self._bot = bot_client
+        self._slot_id = slot_id
         self._game_name = game_name
         self._message_destination = response_destination
         self._thread = None

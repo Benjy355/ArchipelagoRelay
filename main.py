@@ -128,12 +128,19 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
     await finish_connection(ctx, new_session)
 
 async def finish_connection(ctx: discord.Interaction, session: force_disconnect_session):
+<<<<<<< Updated upstream
     # Do this check again, to disconnect and delete duplicates
     # TODO: How the fuck can you iterate AND delete items from an array to cleanup things periodically (remake the array, dumbass)
     if (ctx.guild.id in active_relays.keys()):
         for thread_id in active_relays[ctx.guild.id].keys():
             if (active_relays[ctx.guild.id][thread_id].connected()):
                 await active_relays[ctx.guild.id][thread_id].disconnect()
+=======
+    # Do this check again, to disconnect current session (if it's active)
+    if (session.relay_chat_destination.id in active_relays[ctx.guild.id].keys() and 
+            active_relays[ctx.guild.id][session.relay_chat_destination.id].connected()):
+                await active_relays[ctx.guild.id][session.relay_chat_destination.id].disconnect()
+>>>>>>> Stashed changes
 
     await ctx.response.send_message(session.planned_response, ephemeral=True)
     new_relay = archi_relay(game_name=session.game_name,
