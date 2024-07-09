@@ -158,13 +158,13 @@ async def finish_connection(ctx: discord.Interaction, session: force_disconnect_
 @app_commands.describe(multiworld_link="Example: https://archipelago.gg/room/4_hWRGK1RPi...")
 @app_commands.describe(password="[Optional]Password to connect to the multiworld game")
 @app_commands.describe(create_thread="[Optional](t or f) Will create a thread in the text channel.")
-async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "f"):
+async def connect(ctx: discord.Interaction, multiworld_link: str, password: str = None, create_thread: str = "t"):
     await do_connect(ctx, multiworld_link, password, create_thread)
 
 @cmd_tree.command(name="reconnect", description="Reconnects to the last Multiworld server in this channel/thread")
-@app_commands.describe(create_thread="*Not yet implemented*; will create a thread in the text channel.")
+@app_commands.describe(create_thread="Will create a thread in the text channel.")
 # TODO: ALLOW RECONNECT TO FORCE A THREAD (IF ONE DIDN'T EXIST)
-async def reconnect(ctx: discord.Interaction, create_thread: str = "False"):
+async def reconnect(ctx: discord.Interaction, create_thread: str = "t"):
     prev_link = Config.get("last_archi_connection_link_%s" % ctx.channel_id, ctx.guild)
     if (prev_link):
         await do_connect(ctx, prev_link, Config.get("last_archi_connection_password_%s" % ctx.channel_id, ctx.guild), create_thread)
