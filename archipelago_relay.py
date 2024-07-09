@@ -159,8 +159,12 @@ class archi_relay:
             return "Undefined"
         return loc_name
     
-    def get_archi_game_version(self, game:str) -> int:
-        return int(self._room_info['datapackage_versions'][game])
+    #def get_archi_game_version(self, game:str) -> int:
+    #    return int(self._room_info['datapackage_versions'][game])
+
+    def get_archi_game_checksum(self, game:str) -> str:
+        return self._room_info['datapackage_checksums'][game]
+
     
     def append_payload(self, payload):
         self._pending_payloads.append(encode([payload]))
@@ -230,7 +234,7 @@ class archi_relay:
                 # Note to self, do not dynmamically update THE FUCKING ARRAY YOU ARE FOR X IN YING IN
                 requested_games = copy.deepcopy(games)
                 for game in games:
-                    if (game_cache.get_game_cache(game, self.get_archi_game_version(game)) != None):
+                    if (game_cache.get_game_cache(game, self.get_archi_game_checksum(game)) != None):
                         logging.info("Game_Cache for %s is good" % game)
                         requested_games.remove(game)
                     else:

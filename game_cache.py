@@ -15,7 +15,12 @@ _game_data = {}
 _json_directory = "game_data"
 _json_file = _json_directory + "\\%s.json"
 
-def get_game_cache(game_name: str, version: int = None) -> dict:
+def calc_cache_checksum(game_data: dict) -> str:
+    # Broken out into function in case we need to get our own checksum in the future (because we modify the incoming game JSON)
+    # For now, let's just trust the checksum in the game_data JSON file
+    return game_data['checksum']
+
+def get_game_cache(game_name: str, checksum: str = None) -> dict:
     #Check to see if there is a JSON file containing all of our game data
     #Compare verions if it exists
     #Returns None when no cache exists yet, or cache is out of date.
@@ -49,8 +54,8 @@ def get_game_cache(game_name: str, version: int = None) -> dict:
     # We have something in our memory, let's confirm our version
     try:
         #TODO: CHECK THE CHECKSUM
-        if (version != None):
-            if (int(_game_data[game_name]['version']) < version):
+        if (checksum != None):
+            if (calc_cache_checksum(_game_data[game_name]) != checksum):
                 _game_data[game_name] = None
                 logging.info("[game_cache]Cache for %s is out of date! Requesting..." % game_name)
                 return None
