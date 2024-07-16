@@ -46,7 +46,7 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
     game_info = get_site_data(multiworld_link)
     planned_response = "You shouldn't be seeing this message, Ben fucked up."
     if (game_info == None):
-        await ctx.edit_original_response("Failed to get game information from that link!")
+        await ctx.edit_original_response(content="Failed to get game information from that link!")
         return
 
     # Check and see if we are monitoring this game
@@ -54,7 +54,7 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
         for relay in active_relays[ctx.guild.id].values():
             if (relay._multiworld_site_data.game_id == game_info.game_id):
                 if (relay.connected()):
-                    await ctx.edit_original_response("I'm already connected to this game elsewhere, sorry!")
+                    await ctx.edit_original_response(content="I'm already connected to this game elsewhere, sorry!")
                     return
     else:
         active_relays[ctx.guild.id] = {}
@@ -92,12 +92,12 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
                     planned_response = "Connecting to new game, \"%s\"" % game_name
                     await relay_chat_destination.add_user(ctx.user)
                 except discord.Forbidden:
-                    await ctx.edit_original_response("I don't have permissions to create Threads in this channel.")
+                    await ctx.edit_original_response(content="I don't have permissions to create Threads in this channel.")
                     return
         else:
             # Do we have perms to chat in this channel?
             if (not ctx.channel.permissions_for(ctx.guild.me).send_messages): # Why is ClientUser a thing vs the User type... >:(
-                await ctx.edit_original_response("I cannot chat in this channel!")
+                await ctx.edit_original_response(content="I cannot chat in this channel!")
                 return
             else:
                 planned_response = "Connecting to new game, \"%s\"" % game_name
@@ -139,7 +139,7 @@ async def finish_connection(ctx: discord.Interaction, session: force_disconnect_
             active_relays[ctx.guild.id][session.relay_chat_destination.id].connected()):
                 await active_relays[ctx.guild.id][session.relay_chat_destination.id].disconnect()
 
-    await ctx.edit_original_response(session.planned_response)
+    await ctx.edit_original_response(content=session.planned_response)
     new_relay = archi_relay(game_name=session.game_name,
                             bot_client=main_bot,
                             response_destination=session.relay_chat_destination,
