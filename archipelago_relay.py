@@ -136,12 +136,6 @@ class archi_relay:
     
     def append_payload(self, payload):
         self._pending_payloads.append(encode([payload]))
-
-    def check_for_tracked_item(self, item_id: int, player_id: int):
-        item_name = self._get_itemName_by_id(item_id, player_id)
-        for item in self._items_to_track:
-            if (item.item_id == item_id):
-                self._chat_handler.add_message("%s! %s has been found!" % (item.user_mention_str, item_name))
     
     async def handle_print_json(self, json: dict):
         try:
