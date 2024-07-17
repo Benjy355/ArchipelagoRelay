@@ -203,10 +203,10 @@ class archi_relay:
                 requested_games = copy.deepcopy(games)
                 for game in games:
                     if (game_cache.get_game_cache(game, self.get_archi_game_checksum(game)) != None):
-                        logging.info("Game_Cache for %s is good" % game)
+                        logging.debug("Game_Cache for %s is good" % game)
                         requested_games.remove(game)
                     else:
-                        logging.info("Game_Cache returned None for game %s" % game)
+                        logging.debug("Game_Cache returned None for game %s" % game)
                 if (len(requested_games) > 0):
                     payload = {
                         'cmd': 'GetDataPackage',
