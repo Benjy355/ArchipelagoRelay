@@ -71,34 +71,6 @@ class archi_relay:
 
     _json_handler = None
 
-    def add_item_to_track(self, item: TrackedItem) -> None:
-        if (not item in self._items_to_track):
-            self._items_to_track.append(item)
-            self.save_tracked_items()
-        else:
-            logging.warn("Ignoring track request for duplicate item")
-    
-    # Saves the items being tracked to the config
-    def save_tracked_items(self) -> None:
-        final_str = ""
-        for item in self._items_to_track:
-            final_str += item.as_string() + "\n"
-        
-        Config.set("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, final_str, self._message_destination.guild)
-
-    # Loads tracked items into ... itself.
-    def load_tracked_items(self) -> None:
-        serialized = Config.get("serialized_tracked_items_%s" % self._multiworld_site_data.game_id, self._message_destination.guild, "")
-        main_split = serialized.split()
-        for item in main_split:
-            try:
-                temp_item = TrackedItem.from_string(item)
-                logging.debug("LOAD_TRACKED_ITEMS_ITEM: %s" % item)
-                self.add_item_to_track(temp_item)
-            except:
-                logging.error("Failed to parse TrackedItem from %s" % item)
-
-
     def connection_url(self) -> str:
         return "wss://archipelago.gg:" + self._multiworld_site_data.port
     
@@ -158,13 +130,9 @@ class archi_relay:
             logging.error(e)
             return "Undefined"
         return loc_name
-    
-    #def get_archi_game_version(self, game:str) -> int:
-    #    return int(self._room_info['datapackage_versions'][game])
 
     def get_archi_game_checksum(self, game:str) -> str:
         return self._room_info['datapackage_checksums'][game]
-
     
     def append_payload(self, payload):
         self._pending_payloads.append(encode([payload]))
