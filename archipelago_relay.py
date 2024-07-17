@@ -20,23 +20,6 @@ class FailedToStart(Exception):
         self.reason = reason
         super().__init__(self)
 
-class TrackedItem(): #Glorified dict
-    item_id: int = 0
-    user_mention_str: str = "" # <@115153868165349382>
-
-    def __init__(self, item_id:int, user_mention_str: str):
-        self.item_id = item_id
-        self.user_mention_str = user_mention_str
-
-    def as_string(self):
-        return "%i;%s" % (self.item_id, self.user_mention_str)
-    
-    @classmethod
-    def from_string(cls, string: str):
-        split = string.split(";", 1)
-        return cls(int(split[0]), split[1])
-
-
 class archi_relay:
     _bot: discord.Client = None # Discord client
     _game_name: str = "" # Auto generated name of the game using 4 words.
@@ -66,8 +49,6 @@ class archi_relay:
     _room_info = {} # Raw packet from when _room_info['data'] would be 'RoomInfo'
 
     _previous_deaths = [] # List of deathlink packets to compare/ignore duplicates
-
-    _items_to_track: list[TrackedItem]= []
 
     _json_handler = None
 
@@ -391,14 +372,6 @@ class archi_relay:
             await self._socket.close() # Sometimes this is None by the time we get here, do not care about actually handling the exception
         except:
             pass
-        """try:
-            self._incoming_data_loop.cancel()
-        except:
-            pass
-        try:
-            self._outgoing_data_loop.cancel()
-        except:
-            pass"""
         self._socket = None
 
     def __init__(self, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
