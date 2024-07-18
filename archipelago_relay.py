@@ -28,14 +28,15 @@ class archi_relay:
     _multiworld_site_data: archipelago_site_data = None
     _chat_handler: chat_handler = None
     _password = None
-
-    _deathlink_relays = None # List of relays that are also connected (as other players), but we only care about deathlink messages from them
-    
+ 
     _socket: websockets.connect = None
 
     _pending_payloads: list[str] = []
 
     _continue = True # Keep loops active
+
+    _connected_callback = None # Async function called once we are fully connected
+    slot_id = None
 
     _incoming_data_loop: asyncio.Task = None
     _outgoing_data_loop: asyncio.Task = None
@@ -48,8 +49,6 @@ class archi_relay:
     _archi_slot_info = [] # Player slot info from Archi (I know I know; this is sent from the 'Connected' cmd)
     _room_info = {} # Raw packet from when _room_info['data'] would be 'RoomInfo'
 
-    _previous_deaths = [] # List of deathlink packets to compare/ignore duplicates
-
     _json_handler = None
 
     def connection_url(self) -> str:
@@ -57,7 +56,7 @@ class archi_relay:
     
     def phantom_player(self) -> archipelago_site_slot_data:
         # Returns the player we plan on pretending to be, this should never be None so we won't bother try/excepting
-        return self._multiworld_site_data.players[0]
+        return self._multiworld_site_data.players[self.slot_id]
     
     def _get_playerName_by_id(self, id: int) -> str:
         for player in self._archi_players:
@@ -78,7 +77,6 @@ class archi_relay:
         return "Undefined"
             
     def _get_playerGame_by_id(self, id: int) -> str:
-        slotName = ""
         pName = self._get_playerName_by_id(id)
         for slot in self._archi_slot_info:
             if slot.name == pName:
@@ -146,19 +144,25 @@ class archi_relay:
             
             self._room_info = data
             phantom_player = self.phantom_player()
-            await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._message_destination))
+            #await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._message_destination))
             # Connect as a user now that we have RoomInfo
             payload = {
                 'cmd': 'Connect',
                 'password': self._password, 'name': phantom_player.name, 'version': version_tuple,
-                'tags': ['TextOnly', 'AP'], 'items_handling': 0b111,
+                'tags': ['TextOnly', 'AP', 'DeathLink'], 'items_handling': 0b111,
                 'uuid': 696942024, 'game': phantom_player.game, "slot_data":False
             }
             self.append_payload(payload)
 
         elif (cmd == "PrintJSON"):
-            #print(data)
-            await self.handle_print_json(data)
+            # We only care about this if we're slot 0, otherwise we only print Hints and Deathlink notifications
+            if (self.slot_id == 0 and data['type'] != 'Hint'): # Don't print hints twice (because we still only care if it's FOR us)
+                await self.handle_print_json(data)
+            else:
+                if (data['type'] == 'Hint'):
+                    # We only care if it's for us
+                    if (int(data['receiving'])-1 == self.slot_id): # 0 INDEX EVERYTHING YOU BASTARDS
+                        await self.handle_print_json(data)
         
         elif (cmd == "Connected"):
             try:
@@ -203,16 +207,16 @@ class archi_relay:
                     'keys': player_hint_request_strings
                 }
                 self.append_payload(payload)
+
+                if (self._connected_callback != None):
+                    await self._connected_callback()
                 
                 # Now that we are fully connected, create our deathlink relays
-                for player in self._multiworld_site_data.players:
+                """for player in self._multiworld_site_data.players:
                     logging.debug("[handle_response]Creating deathlink relay for user in slot %s (%s)" % (player.id, player.name))
                     new_relay = deathlink_relay(self, int(player.id))
                     await new_relay.start()
-                    self._deathlink_relays.append(new_relay)
-
-                # Also, load up our tracked items
-                self.load_tracked_items()
+                    self._deathlink_relays.append(new_relay)"""
 
             except Exception as e:
                 logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
@@ -237,7 +241,10 @@ class archi_relay:
                 logging.error(e)
 
         elif (cmd == "Bounced"):
-            pass
+            if ('data' in data and 'source' in data['data']):
+                global insults
+                random_insult = insults[random.randint(0, len(insults)-1)]
+                await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (data['data']['source'], random_insult), self._message_destination))
 
         elif (cmd == "ReceivedItems"):
             for item in data["items"]:
@@ -293,7 +300,8 @@ class archi_relay:
     async def receive_data_loop(self):
         while self._continue:
             if (self._socket == None or self._socket.closed):
-                await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
+                if (self.slot_id == 0):
+                    await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
                 await self.disconnect()
                 return
             try:
@@ -303,7 +311,8 @@ class archi_relay:
                         logging.debug("\nRECEIVE:" + str(response))
                         await self.handle_response(response)
             except websockets.exceptions.ConnectionClosedError as e:
-                await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
+                if (self.slot_id == 0):
+                    await self._chat_handler.add_message(chat_message("Disconnected from *%s*" % self._multiworld_site_data.game_id, self._message_destination))
                 logging.warn("[RECEIVE_DATA_LOOP]ConnectionClosedError")
                 await self.disconnect()
             except Exception as e:
@@ -314,7 +323,8 @@ class archi_relay:
                 logging.error(e)
             await asyncio.sleep(0.1)
 
-    def start(self):
+    # Once fully connected, (when cmd "Connected" is receieved), we will call our 'callback' if it exists.
+    def start(self, callback = None):
         try:
             if (self._multiworld_site_data == None):
                 logging.debug("Getting site data for game from %s" % self._multiworld_link)
@@ -329,6 +339,7 @@ class archi_relay:
         
         logging.debug("Creating main loop for %s" % self._multiworld_site_data.game_id) # TODO: Can probably just await this.
         asyncio.create_task(coro=self._main_loop(), name="MAIN_LOOP_%s" % self._multiworld_site_data.game_id)
+        self._connected_callback = callback
 
     async def _main_loop(self):
         try:
@@ -341,40 +352,26 @@ class archi_relay:
             logging.info("Disconnected from game %s" % self._multiworld_site_data.game_id)
             await self.disconnect()
 
-    async def report_death(self, bounce_packet: dict): # Used for deathlink_relays to send deaths
-        #{'cmd': 'Bounced', 'tags': ['DeathLink'], 'data': {'time': 1712093523.7267756, 'source': 'Ben', 'cause': ''}}
-        if (bounce_packet in self._previous_deaths):
-            return
-        
-        self._previous_deaths.append(bounce_packet)
-        global insults
-        random_insult = insults[random.randint(0, len(insults)-1)]
-        await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (bounce_packet['data']['source'], random_insult), self._message_destination))
-
-    async def forward_message(self, data: dict):
-        # deathlink_relays will push messages it wants over to our parent
-        await self.handle_print_json(data)
-
     def connected(self) -> bool:
         # Returns status of connection
         return (self._socket != None)
     
     async def disconnect(self):
         self._continue = False
-        for death_link in self._deathlink_relays:
-            try:
-                await death_link.disconnect()
-            except:
-                pass
 
-        self._deathlink_relays = []
         try:
             await self._socket.close() # Sometimes this is None by the time we get here, do not care about actually handling the exception
         except:
             pass
         self._socket = None
 
-    def __init__(self, game_name: str, bot_client: discord.Client, response_destination: Union[discord.TextChannel, discord.Thread], multiworld_link: str, chat_handler_obj: chat_handler, password: str, site_data: archipelago_site_data = None):
+    def __init__(self, 
+                game_name: str, 
+                bot_client: discord.Client,
+                response_destination: Union[discord.TextChannel, discord.Thread],
+                multiworld_link: str, chat_handler_obj: chat_handler, password: str,
+                site_data: archipelago_site_data = None,
+                slot_id = 0):
         self._bot = bot_client
         self._game_name = game_name
         self._message_destination = response_destination
@@ -383,8 +380,11 @@ class archi_relay:
         self._multiworld_link = multiworld_link
         self._multiworld_site_data = site_data
         self._continue = True
+
+        self._connected_callback = None
         
-        self._deathlink_relays = []
+        self.slot_id = slot_id # Slot ID to login as for our ghost user
+
         self._chat_handler = chat_handler_obj
 
         self._archi_slot_players = []
@@ -397,9 +397,5 @@ class archi_relay:
         self._room_info = {}
         self._pending_payloads = []
 
-        self._previous_deaths = []
 
-
-
-from deathlink_relay import deathlink_relay
 from json_message_handler import json_message_handler

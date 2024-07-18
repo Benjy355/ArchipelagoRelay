@@ -1,6 +1,7 @@
 import include.Config as Config
 import discord
 from archipelago_relay import archi_relay, FailedToStart
+from archi_handler import archi_handler
 from archipelago_site_scraping import *
 from include.discord_oauth import DISCORD_TOKEN
 from discord import app_commands
@@ -10,7 +11,6 @@ from chat_handler import chat_handler
 
 from views.view_confirm_force_disconnect import *
 
-from archipelago_relay import TrackedItem # TODO: LOL deal with this disaster
 from typing import Union
 
 from include.game_namer import name_game
@@ -23,8 +23,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 active_relays: dict[
     int, dict[
-        int, archi_relay
-        ]] = {} # {guild: {channel/thread id: archi_relay}}
+        int, archi_handler
+        ]] = {} # {guild: {channel/thread id: archi_handler}}
 
 intent = discord.Intents.default()
 intent.message_content = True
@@ -136,7 +136,7 @@ async def finish_connection(ctx: discord.Interaction, session: force_disconnect_
                 await active_relays[ctx.guild.id][session.relay_chat_destination.id].disconnect()
 
     await ctx.edit_original_response(content=session.planned_response)
-    new_relay = archi_relay(game_name=session.game_name,
+    new_relay = archi_handler(game_name=session.game_name,
                             bot_client=main_bot,
                             response_destination=session.relay_chat_destination,
                             multiworld_link=session.multiworld_link,
@@ -183,8 +183,12 @@ async def disconnect(ctx: discord.Interaction):
         return
     
     await found_game.disconnect()
-    await ctx.response.send_message("Disconnected from \"%s\"" % found_game._game_name, ephemeral=False)
+    await ctx.response.send_message("Disconnected from \"%s\"" % found_game.game_name, ephemeral=False)
 
+
+#@cmd_tree.command(name="break", description="Breaks the bot so ben can debug")
+#async def Break(ctx: discord.Interaction):
+#    pass
 
 @main_bot.event
 async def on_ready():
