@@ -6,6 +6,7 @@ from include.JSONNodeFilter import JSONNodeFilter
 from include.JSONMessageFilter import JSONMessageFilter
 import JSONFilters
 
+#Todo, break this class, we don't need this to be a dynamicly built thing
 class json_message_handler:
     parent_relay: archi_relay = None
     node_filters: dict[str, JSONNodeFilter] = {}
