@@ -241,7 +241,7 @@ class archi_relay:
                 logging.error(e)
 
         elif (cmd == "Bounced"):
-            if ('data' in data and 'source' in data['data']):
+            if ('data' in data and 'source' in data['data'] and self.slot_id == 0): # When did Bounced start going to all players?!
                 global insults
                 random_insult = insults[random.randint(0, len(insults)-1)]
                 await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (data['data']['source'], random_insult), self._message_destination))
