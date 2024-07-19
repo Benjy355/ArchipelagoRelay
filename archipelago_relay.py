@@ -162,6 +162,7 @@ class archi_relay:
                 if (data['type'] == 'Hint'):
                     # We only care if it's for us
                     if (int(data['receiving'])-1 == self.slot_id): # 0 INDEX EVERYTHING YOU BASTARDS
+                        print(data)
                         await self.handle_print_json(data)
         
         elif (cmd == "Connected"):

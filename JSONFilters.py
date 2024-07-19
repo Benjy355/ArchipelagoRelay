@@ -34,6 +34,7 @@ def _default_generic_message_func(data: dict, relay: archi_relay, parent_json_ha
             return ""
     return final_string
 
+"""
 def _default_hint_message_func(data: dict, relay: archi_relay, parent_json_handler) -> str:
     #player_info = relay._get_playerData_by_id(data['slot'])
     receiving_player_name = relay._get_playerName_by_id(data['receiving'])
@@ -46,7 +47,7 @@ def _default_hint_message_func(data: dict, relay: archi_relay, parent_json_handl
         return f"[Hint]: {receiving_player_name}'s **{item_str}** was **FOUND** at *{item_location_str}* in {sending_player_name}'s world."
     else:
         return f"[Hint]: {receiving_player_name}'s **{item_str}** is at *{item_location_str}* in {sending_player_name}'s world."
-    
+"""
 def _default_join_message_func(data: dict, relay: archi_relay, parent_json_handler) -> str:
     player_info = relay._get_playerData_by_id(data['slot'])
     return "*%s* has joined playing *%s*." % (player_info.name, relay._get_playerGame_by_id(data['slot']))
@@ -68,7 +69,7 @@ DefaultNodeFilters = {
 DefaultMessageFilters = {
     'generic': JSONMessageFilter("generic", filter_func=_default_generic_message_func),
     'Join': JSONMessageFilter("Join", filter_func=_default_join_message_func),
-    'Hint': JSONMessageFilter("Hint", filter_func=_default_hint_message_func),
+    'Hint': JSONMessageFilter("Hint", filter_func=_default_generic_message_func),
     'Tutorial': JSONMessageFilter("Tutorial", filter_func=_do_nothing),
     'TagsChanged': JSONMessageFilter("TagsChanged", filter_func=_do_nothing),
     'Part': JSONMessageFilter("Part", filter_func=_default_part_message_func),
