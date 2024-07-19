@@ -52,7 +52,7 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
     # Check and see if we are monitoring this game
     if (ctx.guild.id in active_relays):
         for relay in active_relays[ctx.guild.id].values():
-            if (relay._multiworld_site_data.game_id == game_info.game_id):
+            if (relay.site_data.game_id == game_info.game_id):
                 if (relay.connected()):
                     await ctx.edit_original_response(content="I'm already connected to this game elsewhere, sorry!")
                     return
