@@ -211,13 +211,6 @@ class archi_relay:
 
                 if (self._connected_callback != None):
                     await self._connected_callback()
-                
-                # Now that we are fully connected, create our deathlink relays
-                """for player in self._multiworld_site_data.players:
-                    logging.debug("[handle_response]Creating deathlink relay for user in slot %s (%s)" % (player.id, player.name))
-                    new_relay = deathlink_relay(self, int(player.id))
-                    await new_relay.start()
-                    self._deathlink_relays.append(new_relay)"""
 
             except Exception as e:
                 logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
