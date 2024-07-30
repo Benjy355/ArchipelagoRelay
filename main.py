@@ -93,7 +93,7 @@ async def do_connect(ctx: discord.Interaction, multiworld_link: str, password: s
                     await relay_chat_destination.add_user(ctx.user)
                     # Let's send the link to the multiworld page for easy finding, and pin it!
                     msg = await relay_chat_destination.send(multiworld_link)
-                    await msg.pin()
+                    #await msg.pin()
                 except discord.Forbidden:
                     await ctx.edit_original_response(content="I don't have permissions to create Threads in this channel.")
                     return

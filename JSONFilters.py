@@ -50,6 +50,8 @@ def _default_hint_message_func(data: dict, relay: archi_relay, parent_json_handl
 """
 def _default_join_message_func(data: dict, relay: archi_relay, parent_json_handler) -> str:
     player_info = relay._get_playerData_by_id(data['slot'])
+    if ("Tracker" in data['tags']):
+        return ""
     return "*%s* has joined playing *%s*." % (player_info.name, relay._get_playerGame_by_id(data['slot']))
 
 def _default_part_message_func(data: dict, relay: archi_relay, parent_json_handler) -> str:
