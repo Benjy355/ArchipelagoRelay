@@ -191,8 +191,8 @@ class archi_relay:
                         'cmd': 'GetDataPackage',
                         'games': requested_games
                     }
-                    logging.info("Requesting game data for:")
-                    logging.info(requested_games)
+                    logging.debug("Requesting game data for:")
+                    logging.debug(requested_games)
                     self.append_payload(payload)
                 
                 # Get all of the hints, and let Archipelago know we want notified of hints
