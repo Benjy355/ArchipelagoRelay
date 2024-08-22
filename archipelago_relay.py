@@ -20,6 +20,13 @@ class FailedToStart(Exception):
         self.reason = reason
         super().__init__(self)
 
+class FailedToHandleDataPacket(Exception):
+    data = None # Should be the data packet received that we have trouble with
+
+    def __init__(self, data, *args: object) -> None:
+        self.data = data
+        super().__init__(*args)
+
 class archi_relay:
     _bot: discord.Client = None # Discord client
     _game_name: str = "" # Auto generated name of the game using 4 words.
@@ -133,145 +140,139 @@ class archi_relay:
     # Handle incoming data from Archipelago
     async def handle_response(self, data: dict):
         try:
-            cmd = data['cmd']
-        except:
-            logging.error("Invalid response from Archipelago; failed to find 'cmd' in response.")
-            return
-        
-        if (cmd == 'RoomInfo'):
-            if ("players" in data):
-                self._archi_slot_players = data.get("players", [])
-            
-            self._room_info = data
-            phantom_player = self.phantom_player()
-            #await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._message_destination))
-            # Connect as a user now that we have RoomInfo
-            payload = {
-                'cmd': 'Connect',
-                'password': self._password, 'name': phantom_player.name, 'version': version_tuple,
-                'tags': ['TextOnly', 'AP', 'DeathLink'], 'items_handling': 0b111,
-                'uuid': 696942024, 'game': phantom_player.game, "slot_data":False
-            }
-            self.append_payload(payload)
-
-        elif (cmd == "PrintJSON"):
-            # We only care about this if we're slot 0, otherwise we only print Hints and Deathlink notifications
-            if (self.slot_id == 0 and data['type'] != 'Hint'): # Don't print hints twice (because we still only care if it's FOR us)
-                await self.handle_print_json(data)
-            else:
-                if (data['type'] == 'Hint'):
-                    # We only care if it's for us
-                    if (int(data['receiving'])-1 == self.slot_id): # 0 INDEX EVERYTHING YOU BASTARDS
-                        await self.handle_print_json(data)
-        
-        elif (cmd == "Connected"):
             try:
-                self._archi_players = []
-                for p in data["players"]:
-                    self._archi_players.append(p)
-                for k, s in data["slot_info"].items():
-                    self._archi_slot_info.append(s)
-                # Get our cache together!
-                games = []
-                for slot in self._archi_slot_info:
-                    if (not slot.game in games):
-                        games.append(slot.game)
+                cmd = data['cmd']
+            except Exception as e:
+                raise FailedToHandleDataPacket(data) from e
+        
+            if (cmd == 'RoomInfo'):
+                if ("players" in data):
+                    self._archi_slot_players = data.get("players", [])
                 
-                # Rip out any games where we trust our cache
-                # Note to self, do not dynmamically update THE FUCKING ARRAY YOU ARE FOR X IN YING IN
-                requested_games = copy.deepcopy(games)
-                for game in games:
-                    if (game_cache.get_game_cache(game, self.get_archi_game_checksum(game)) != None):
-                        logging.debug("Game_Cache for %s is good" % game)
-                        requested_games.remove(game)
-                    else:
-                        logging.debug("Game_Cache returned None for game %s" % game)
-                if (len(requested_games) > 0):
-                    payload = {
-                        'cmd': 'GetDataPackage',
-                        'games': requested_games
-                    }
-                    logging.debug("Requesting game data for:")
-                    logging.debug(requested_games)
-                    self.append_payload(payload)
-                
-                # Get all of the hints, and let Archipelago know we want notified of hints
-                player_hint_request_strings = []
-                for player in self._archi_players:
-                    req_str = "_read_hints_%s_%s" % (player.team, player.slot)
-                    player_hint_request_strings.append(req_str)
-                    self._archi_retrieved_name_map[req_str] = player
-
+                self._room_info = data
+                phantom_player = self.phantom_player()
+                #await self._chat_handler.add_message(chat_message("Connecting to server! I will imitate *everybody*.", self._message_destination))
+                # Connect as a user now that we have RoomInfo
                 payload = {
-                    'cmd': 'Get',
-                    'keys': player_hint_request_strings
+                    'cmd': 'Connect',
+                    'password': self._password, 'name': phantom_player.name, 'version': version_tuple,
+                    'tags': ['TextOnly', 'AP', 'DeathLink'], 'items_handling': 0b111,
+                    'uuid': 696942024, 'game': phantom_player.game, "slot_data":False
                 }
                 self.append_payload(payload)
 
-                if (self._connected_callback != None):
-                    await self._connected_callback()
-
-            except Exception as e:
-                logging.error("[handle_response]Failed to read 'players' or 'slot_info' on 'Connected' cmd")
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[handle_response]")
-                logging.error([exc_type, fname, exc_tb.tb_lineno])
-                logging.error(e)
-
-        elif (cmd == "DataPackage"):
-            try:
-                if ("games" in data['data']):
-                    for single_game_name in data['data']['games']:
-                        logging.debug("Receiving DataPackage for %s" % single_game_name)
-                        game_cache.update_game_cache(single_game_name, data['data']['games'][single_game_name])
-            except Exception as e:
-                logging.error("[handle_response]Failed to parse DataPackage!")
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[handle_response]")
-                logging.error([exc_type, fname, exc_tb.tb_lineno])
-                logging.error(e)
-
-        elif (cmd == "Bounced"):
-            if ('data' in data and 'source' in data['data'] and self.slot_id == 0): # When did Bounced start going to all players?!
-                global insults
-                random_insult = insults[random.randint(0, len(insults)-1)]
-                await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (data['data']['source'], random_insult), self._message_destination))
-
-        elif (cmd == "ReceivedItems"):
-            for item in data["items"]:
-                if (not int(item.player) in self._archi_player_items):
-                    self._archi_player_items[int(item.player)] = []
-                self._archi_player_items[int(item.player)].append(item)
-
-        elif (cmd == "RoomUpdate"):
-            pass #TODO
-
-        elif (cmd == "Retrieved"):
-            if (not "keys" in data):
-                logging.error("Bad 'Retrieved' result!")
-                logging.error(data)
-                return
-            
-            for k, key in data["keys"].items():
-                if k in self._archi_retrieved_name_map:
-                    for hint in key:
-                        if ("class" in hint and hint["class"] == "Hint"):
-                            if (hint["receiving_player"] not in self._archi_player_hints):
-                                self._archi_player_hints[hint["receiving_player"]] = []
-                            if (hint not in self._archi_player_hints[hint["receiving_player"]]): # Ignore duplicates, of course.
-                                self._archi_player_hints[hint["receiving_player"]].append(hint)
-                        else:
-                            logging.error("Expected 'Retrieved' cmd packet")
-                            logging.error(hint)
+            elif (cmd == "PrintJSON"):
+                # We only care about this if we're slot 0, otherwise we only print Hints and Deathlink notifications
+                if (self.slot_id == 0 and data['type'] != 'Hint'): # Don't print hints twice (because we still only care if it's FOR us)
+                    await self.handle_print_json(data)
                 else:
-                    logging.error("Received 'Retrieved' cmd packet for user we don't track?")
-                    logging.error(key)
-        
-        else:
-            logging.warn("Received unhandled cmd: %s" % cmd)
-            logging.warn(data)
+                    if (data['type'] == 'Hint'):
+                        # We only care if it's for us
+                        if (int(data['receiving'])-1 == self.slot_id): # 0 INDEX EVERYTHING YOU BASTARDS
+                            await self.handle_print_json(data)
+            
+            elif (cmd == "Connected"):
+                try:
+                    self._archi_players = []
+                    for p in data["players"]:
+                        self._archi_players.append(p)
+                    for k, s in data["slot_info"].items():
+                        self._archi_slot_info.append(s)
+                    # Get our cache together!
+                    games = []
+                    for slot in self._archi_slot_info:
+                        if (not slot.game in games):
+                            games.append(slot.game)
+                    
+                    # Rip out any games where we trust our cache
+                    # Note to self, do not dynmamically update THE FUCKING ARRAY YOU ARE FOR X IN YING IN
+                    requested_games = copy.deepcopy(games)
+                    for game in games:
+                        if (game_cache.get_game_cache(game, self.get_archi_game_checksum(game)) != None):
+                            logging.debug("Game_Cache for %s is good" % game)
+                            requested_games.remove(game)
+                        else:
+                            logging.debug("Game_Cache returned None for game %s" % game)
+                    if (len(requested_games) > 0):
+                        payload = {
+                            'cmd': 'GetDataPackage',
+                            'games': requested_games
+                        }
+                        logging.debug("Requesting game data for:")
+                        logging.debug(requested_games)
+                        self.append_payload(payload)
+                    
+                    # Get all of the hints, and let Archipelago know we want notified of hints
+                    player_hint_request_strings = []
+                    for player in self._archi_players:
+                        req_str = "_read_hints_%s_%s" % (player.team, player.slot)
+                        player_hint_request_strings.append(req_str)
+                        self._archi_retrieved_name_map[req_str] = player
+
+                    payload = {
+                        'cmd': 'Get',
+                        'keys': player_hint_request_strings
+                    }
+                    self.append_payload(payload)
+
+                    if (self._connected_callback != None):
+                        await self._connected_callback()
+
+                except Exception as e:
+                    raise FailedToHandleDataPacket(data) from e
+
+            elif (cmd == "DataPackage"):
+                try:
+                    if ("games" in data['data']):
+                        for single_game_name in data['data']['games']:
+                            logging.debug("Receiving DataPackage for %s" % single_game_name)
+                            game_cache.update_game_cache(single_game_name, data['data']['games'][single_game_name])
+                except Exception as e:
+                    raise FailedToHandleDataPacket(data) from e
+
+            elif (cmd == "Bounced"):
+                if ('data' in data and 'source' in data['data'] and self.slot_id == 0): # When did Bounced start going to all players?!
+                    global insults
+                    random_insult = insults[random.randint(0, len(insults)-1)]
+                    await self._chat_handler.add_message(chat_message("**%s** died! <:Duc:1084164152681037845><:KerZ:1084164151317889034> %s" % (data['data']['source'], random_insult), self._message_destination))
+
+            elif (cmd == "ReceivedItems"):
+                for item in data["items"]:
+                    if (not int(item.player) in self._archi_player_items):
+                        self._archi_player_items[int(item.player)] = []
+                    self._archi_player_items[int(item.player)].append(item)
+
+            elif (cmd == "RoomUpdate"):
+                pass #TODO
+
+            elif (cmd == "Retrieved"):
+                if (not "keys" in data):
+                    logging.error("Bad 'Retrieved' result!")
+                    logging.error(data)
+                    return
+                
+                for k, key in data["keys"].items():
+                    if k in self._archi_retrieved_name_map:
+                        for hint in key:
+                            if ("class" in hint and hint["class"] == "Hint"):
+                                if (hint["receiving_player"] not in self._archi_player_hints):
+                                    self._archi_player_hints[hint["receiving_player"]] = []
+                                if (hint not in self._archi_player_hints[hint["receiving_player"]]): # Ignore duplicates, of course.
+                                    self._archi_player_hints[hint["receiving_player"]].append(hint)
+                            else:
+                                logging.error("Expected 'Retrieved' cmd packet")
+                                logging.error(hint)
+                    else:
+                        logging.error("Received 'Retrieved' cmd packet for user we don't track?")
+                        logging.error(key)
+            
+            else:
+                logging.error("Received unhandled cmd: %s" % cmd)
+                logging.error(data)
+        except FailedToHandleDataPacket as e:
+            logging.error("Failed to Handle Data packet:")
+            logging.error(e)
+            logging.error(data)
 
     async def send_data_loop(self):
         while self._continue:
