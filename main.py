@@ -15,11 +15,15 @@ from typing import Union
 
 from include.game_namer import name_game
 import copy
+import datetime
 
 # Perms int 377957207104
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
 
-logging.getLogger().setLevel(logging.INFO)
+logfile = "logs\\%s" % datetime.today().strftime('%Y-%m-%d')
+
+logging.getLogger().setLevel(logging.ERROR)
+logging.basicConfig(filename=logfile)
 
 active_relays: dict[
     int, dict[
