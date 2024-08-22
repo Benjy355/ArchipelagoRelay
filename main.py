@@ -20,7 +20,10 @@ import datetime
 # Perms int 377957207104
 #test = get_site_data("https://archipelago.gg/room/4_hWRGK1RPiG3wYFQTXImA")
 
-logfile = "logs\\%s" % datetime.datetime.today().strftime('%Y-%m-%d')
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+logfile = "logs\\%s.log" % datetime.datetime.today().strftime('%Y-%m-%d')
 
 logging.getLogger().setLevel(logging.ERROR)
 logging.basicConfig(filename=logfile)
