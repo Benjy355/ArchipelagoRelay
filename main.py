@@ -25,7 +25,7 @@ if not os.path.exists("logs"):
 
 logfile = "logs\\%s.log" % datetime.datetime.today().strftime('%Y-%m-%d')
 
-logging.getLogger().setLevel(logging.ERROR)
+logging.getLogger().setLevel(logging.WARN)
 logging.basicConfig(filename=logfile)
 
 active_relays: dict[
