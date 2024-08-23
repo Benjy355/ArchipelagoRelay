@@ -286,9 +286,7 @@ class archi_relay:
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[SEND_DATA_LOOP]")
                 logging.error([exc_type, fname, exc_tb.tb_lineno])
-                logging.error(e)
             await asyncio.sleep(0.1)
     
     async def receive_data_loop(self):
@@ -312,9 +310,10 @@ class archi_relay:
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                logging.error("[RECEIVE_DATA_LOOP]")
                 logging.error([exc_type, fname, exc_tb.tb_lineno])
-                logging.error(e)
+                logging.error(data)
+                logging.error("Decoded Data/Response:")
+                logging.error(response)
             await asyncio.sleep(0.1)
 
     # Once fully connected, (when cmd "Connected" is receieved), we will call our 'callback' if it exists.
