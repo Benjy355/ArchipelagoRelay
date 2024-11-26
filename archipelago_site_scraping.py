@@ -68,7 +68,8 @@ def get_site_data(url: str) -> archipelago_site_data:
         
         #Get the port, luckily (so far) there is only one span! Huzzah!
         # We will grab the "data-tooltip" arg and take the final 6 characters, then cut off the last one (port is *58967*.)
-        return_data.port = main_bs.find("span").attrs['data-tooltip'][-6:-1]
+        host_room_info_span = main_bs.find("span", id="host-room-info")
+        return_data.port = host_room_info_span.find("span").attrs['data-tooltip'][-6:-1]
 
         all_tables = main_bs.find_all("table")
     except:
@@ -86,7 +87,7 @@ def get_site_data(url: str) -> archipelago_site_data:
         except Exception as e: #TODO: LOG THE EXCEPTION DETAILS
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            logging.error("[RECEIVE_DATA_LOOP]")
+            logging.error("[SITE_SCRAPING]")
             logging.error([exc_type, fname, exc_tb.tb_lineno])
             logging.error(e)
             return None
