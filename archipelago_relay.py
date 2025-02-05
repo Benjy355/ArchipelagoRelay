@@ -341,6 +341,8 @@ class archi_relay:
             self._outgoing_data_loop = asyncio.create_task(coro=self.send_data_loop(), name="OUT_%s" % self._multiworld_site_data.game_id)
         except ConnectionRefusedError:
             await self._chat_handler.add_message(chat_message("Failed to connect to game *%s*! Connection refused." % self._multiworld_site_data.game_id, self._message_destination))
+        except TimeoutError:
+            await self._chat_handler.add_message(chat_message("Failed to connect to game *%s*! Connection timed out." % self._multiworld_site_data.game_id, self._message_destination))
         except websockets.ConnectionClosed:
             logging.info("Disconnected from game %s" % self._multiworld_site_data.game_id)
             await self.disconnect()

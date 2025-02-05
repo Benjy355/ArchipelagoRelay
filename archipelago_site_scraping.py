@@ -58,9 +58,12 @@ class archipelago_site_data:
 def get_site_data(url: str) -> archipelago_site_data:
     #Takes a url to https://archipelago.gg/room/... and returns out a site_data object
     return_data = archipelago_site_data()
-    page_request = requests.get(url=url)
+    page_request = requests.get(url=url, timeout=10)
 
-    main_bs = BeautifulSoup(page_request.content, "html.parser")
+    try:
+        main_bs = BeautifulSoup(page_request.content, "html.parser")
+    except:
+        return None
 
     try:
     #Get the game ID from the <title> field
