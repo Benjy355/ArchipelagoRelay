@@ -39,6 +39,7 @@ class archi_handler:
 
     async def start_other_relays(self):
         for i in range(1, len(self.site_data.players)):
+            asyncio.sleep(1)
             new_relay = archi_relay(
                                     game_name = self.game_name,
                                     bot_client = self.bot_client,
