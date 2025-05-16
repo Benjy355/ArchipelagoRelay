@@ -6,15 +6,16 @@ import socket
 import os
 import sys
 import asyncio
-
-from include.discord_oauth import DISCORD_TOKEN
-import logging
+import threading
 
 import main
+from include.discord_oauth import DISCORD_TOKEN
+import logging
 
 class AppServerSvc (win32serviceutil.ServiceFramework):
     _svc_name_ = "ArchipelagoRelay"
     _svc_display_name_ = "ArchipelagoRelay Discord Bot"
+    _bot_task = None
 
     _continue = True
 
@@ -38,7 +39,7 @@ class AppServerSvc (win32serviceutil.ServiceFramework):
         self.main()
 
     def main(self):
-        main.main_bot.run(DISCORD_TOKEN, log_level=logging.WARN)
+        threading.Thread(target=main.main_bot.run, args=(DISCORD_TOKEN,), kwargs={'log_level': logging.WARN}).start()
         while (self._continue):
             pass
 
