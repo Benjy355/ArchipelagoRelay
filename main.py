@@ -1,11 +1,9 @@
 import include.Config as Config
 import discord
-from archipelago_relay import archi_relay, FailedToStart
 from archi_handler import archi_handler
 from archipelago_site_scraping import *
 from include.discord_oauth import DISCORD_TOKEN
 from discord import app_commands
-import asyncio
 import logging
 from chat_handler import chat_handler
 
@@ -205,5 +203,3 @@ async def on_ready():
     await cmd_tree.sync()
     main_chat_handler.start()
     print("Ready!")
-
-main_bot.run(DISCORD_TOKEN, log_level=logging.WARN)
