@@ -1,10 +1,18 @@
 {
     "configurations": [
         {
-            "name": "Python: File",
-            "type": "python",
+            "name": "Python: Service",
+            "type": "debugpy",
             "request": "launch",
-            "program": "main.py",
+            "program": "run_as_service.py",
+            "args": ["debug"],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "run_as_script.py",
             "justMyCode": true
         }
     ]
