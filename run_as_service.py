@@ -38,7 +38,7 @@ class AppServerSvc (win32serviceutil.ServiceFramework):
         self.main()
 
     def main(self):
-        threading.Thread(target=main.main_bot.run, args=(DISCORD_TOKEN,), kwargs={'log_level': logging.WARN}).start()
+        threading.Thread(target=main.main_bot.run, kwargs={'token': DISCORD_TOKEN, 'log_level': logging.WARN}).start()
         while (self._continue):
             pass
 
