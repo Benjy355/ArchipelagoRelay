@@ -15,7 +15,6 @@ import logging
 class AppServerSvc (win32serviceutil.ServiceFramework):
     _svc_name_ = "ArchipelagoRelay"
     _svc_display_name_ = "ArchipelagoRelay Discord Bot"
-    _bot_task = None
 
     _continue = True
 
