@@ -13,8 +13,8 @@ import logging
 import main
 
 class AppServerSvc (win32serviceutil.ServiceFramework):
-    _svc_name_ = "JimmieBot"
-    _svc_display_name_ = "JimmieBot Discord Bot"
+    _svc_name_ = "ArchipelagoRelay"
+    _svc_display_name_ = "ArchipelagoRelay Discord Bot"
 
     _continue = True
 
