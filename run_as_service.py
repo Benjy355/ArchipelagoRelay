@@ -7,6 +7,7 @@ import os
 import sys
 import asyncio
 import threading
+import time
 
 import main
 from include.discord_oauth import DISCORD_TOKEN
@@ -40,7 +41,8 @@ class AppServerSvc (win32serviceutil.ServiceFramework):
     def main(self):
         threading.Thread(target=main.main_bot.run, kwargs={'token': DISCORD_TOKEN, 'log_level': logging.WARN}).start()
         while (self._continue):
-            pass
+            time.sleep(1)
+
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(AppServerSvc)
